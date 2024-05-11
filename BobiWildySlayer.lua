@@ -58,6 +58,7 @@ local itemIdsToLoot = {37227, -- congealed blood
 39068, -- Adrenaline crystal noted
 39065, -- wilderness hilt
 39895, -- gemstone hauberk
+39897, -- Gemstone greaves
 1305, -- dragon longsword
 572, -- water orb
 36023, -- mammoth tusk
@@ -444,11 +445,11 @@ end
 local function OnyxDragonsTask()
     --
     local function randomizeOnyxLocation()
-        local OnyxLocation = WPOINT.new(3223 + math.random(-5, 5), 3779 + math.random(-5, 5), 0)
+        local OnyxLocation = WPOINT.new(3257 + math.random(-5, 5), 3787 + math.random(-5, 5), 0)
         return OnyxLocation
     end
     local OnyxLocation = randomizeOnyxLocation()
-    local OnyxCheck = WPOINT.new(3223, 3779, 0)
+    local OnyxCheck = WPOINT.new(3257, 3787, 0)
     --
     if API.PInAreaW(OnyxCheck, 25) then
         repeat
