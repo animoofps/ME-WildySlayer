@@ -827,10 +827,10 @@ local function WyvernSlayer()
         end
         if not hasValidTarget() then
             if findNPC(21992, 50) then
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21992}, 15, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21992}, 9, false, 100)
                 API.RandomSleep2(1800, 800, 600)
             else
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29356}, 15, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29356}, 9, false, 100)
                 API.RandomSleep2(800, 400, 600)
             end
         end
@@ -886,7 +886,7 @@ local function KalgerionSlayer()
         eatfood()
         loot()
         PrayerCheck()
-        if API.PInAreaW(KalgerionCheck, 10) then
+        if API.PInAreaW(KalgerionCheck, 5) then
             if not hasValidTarget() then
                 API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29345}, 50, false, 100)
                 API.RandomSleep2(800, 600, 1200)
@@ -1452,6 +1452,7 @@ function eatfood()
 
     if hp < 65 then
         if eatFoodAB.id ~= 0 and eatFoodAB.enabled then
+            print("Eating food")
             API.DoAction_Ability_Direct(eatFoodAB, 1, API.OFF_ACT_GeneralInterface_route)
             API.RandomSleep2(800, 600, 1000)
         end
@@ -1487,9 +1488,6 @@ while API.Read_LoopyLoop() do
     if (KillsLeft0() == 0) then
         Mandrith()
     else
-        if findNPC(27299, 50) then
-            deathCheck()
-        end
         TaskDoer()
     end
 end
@@ -1502,12 +1500,12 @@ end
 
 3. Onyx dragons doesn't pick items up
 
-4. did something with DeadCheck() could be broken (it is broken, find a way to fix it[died because of travel error on kalgerion task (fixed already)))
+4. combo() too slow
 
-5. combo() too slow
+5. GreaterDemonBerserkersSlayer() safespot is a bit buggy, find a better way of doing it 
 
-6. GreaterDemonBerserkersSlayer() safespot is a bit buggy, find a better way of doing it 
+6. Acheron Mammoths special attack melts, do something about it 
 
-7. Acheron Mammoths special attack melts, do something about it 
+7. Died on wyverns, deathcheck also doesn't work. FIX BOTH!!!!!!!!!! (removed death check for now)
 
 --]]
