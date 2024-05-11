@@ -318,11 +318,11 @@ local function GuildTP()
     API.DoAction_Ability("Max guild Teleport", 1, API.OFF_ACT_GeneralInterface_route)
     API.RandomSleep2(1200, 1000, 2000)
     API.WaitUntilMovingandAnimEnds()
-    API.RandomSleep2(1800, 1400, 2000)
+    API.RandomSleep2(2000, 1400, 2000)
 end
 
 local function deathCheck()
-    API.RandomSleep2(3500, 2500, 4000)
+    API.RandomSleep2(6500, 4500, 4000)
     print("You managed to die... do we grab your things and go back?")
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {27299}, 50)
     API.RandomSleep2(1800, 1400, 2000)
@@ -971,6 +971,14 @@ local function IceWyrmTask()
 end
 
 local function HydrixSlayer()
+    --
+    local function randomizeHydrixArea()
+        local HydrixCheck = WPOINT.new(3028 + math.random(-2, 2), 3890 + math.random(-2, 2), 0)
+        return HydrixCheck
+    end
+    local HydrixAreaCheck = WPOINT.new(3028, 3890, 0)
+    local HydrixCheck = randomizeHydrixArea()
+    --
     if findNPC(29348, 50) then
         if not UTILS.isDeflectMagic() then
             API.RandomSleep2(200, 500, 300)
@@ -978,9 +986,15 @@ local function HydrixSlayer()
         end
         loot()
         eatfood()
-        if not hasValidTarget() then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29348}, 50, false, 100)
-            API.RandomSleep2(800, 400, 600)
+        if API.PInAreaW(HydrixAreaCheck, 10) then
+            if not hasValidTarget() then
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29348}, 50, false, 100)
+                API.RandomSleep2(800, 400, 600)
+            end
+        else
+            print("Not inside the area check, going back")
+            API.DoAction_WalkerW(HydrixCheck)
+            API.RandomSleep2(800, 600, 1000)
         end
     end
 end
@@ -989,10 +1003,10 @@ local function HydrixDragonsTask()
     --
     randomizeLavaWormWalker1()
     local function randomizeHydrixDragonLocation()
-        local HydrixDragonLocation = WPOINT.new(3020 + math.random(-2, 2), 3897 + math.random(-2, 2), 0)
+        local HydrixDragonLocation = WPOINT.new(3028 + math.random(-2, 2), 3890 + math.random(-2, 2), 0)
         return HydrixDragonLocation
     end
-    local HydrixDragonCheck = WPOINT.new(3020, 3897, 0)
+    local HydrixDragonCheck = WPOINT.new(3028, 3890, 0)
     local HydrixRandomized = randomizeHydrixDragonLocation()
     --
     if API.PInAreaW(HydrixDragonCheck, 25) then
@@ -1407,9 +1421,6 @@ local function TaskDoer()
     API.RandomSleep2(200, 200, 200)
     if slayerTask then
         API.RandomSleep2(800, 400, 600)
-        if findNPC(27299, 50) then
-            deathCheck()
-        end
         print("Your current task is: " .. slayerTask)
         local taskFunction = TaskLocalization[slayerTask]
         taskFunction()
@@ -1476,6 +1487,9 @@ while API.Read_LoopyLoop() do
     if (KillsLeft0() == 0) then
         Mandrith()
     else
+        if findNPC(27299, 50) then
+            deathCheck()
+        end
         TaskDoer()
     end
 end
@@ -1488,7 +1502,7 @@ end
 
 3. Onyx dragons doesn't pick items up
 
-4. did something with DeadCheck() could be broken (it is broken, find a way to fix it[died because of travel error on kalgerion task (fixed already))
+4. did something with DeadCheck() could be broken (it is broken, find a way to fix it[died because of travel error on kalgerion task (fixed already)))
 
 5. combo() too slow
 
