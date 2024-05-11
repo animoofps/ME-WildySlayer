@@ -1488,7 +1488,7 @@ end
 
 3. Onyx dragons doesn't pick items up
 
-4. did something with DeadCheck() could be broken (it is broken, find a way to fix it)
+4. did something with DeadCheck() could be broken (it is broken, find a way to fix it[died because of travel error on kalgerion task (fixed already))
 
 5. combo() too slow
 
