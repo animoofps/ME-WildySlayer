@@ -1488,10 +1488,12 @@ end
 
 3. Onyx dragons doesn't pick items up
 
-4. did something with DeadCheck() could be broken (it is broken, find a way to fix it[died because of travel error on kalgerion task (fixed already))
+4. did something with DeadCheck() could be broken (it is broken, find a way to fix it)
 
 5. combo() too slow
 
 6. GreaterDemonBerserkersSlayer() safespot is a bit buggy, find a better way of doing it 
+
+7. Acheron Mammoths special attack melts, do something about it 
 
 --]]
