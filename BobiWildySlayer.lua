@@ -872,9 +872,9 @@ end
 
 local function KalgerionSlayer()
     --
-    local KalgerionCheck = WPOINT.new(3278, 3876, 0)
+    local KalgerionCheck = WPOINT.new(3288, 3874, 0)
     local function KalgWalk()
-        local KalgWalk = WPOINT.new(3278 + math.random(-2, 2), 3876 + math.random(-2, 2), 0)
+        local KalgWalk = WPOINT.new(3288 + math.random(-2, 2), 3874 + math.random(-2, 2), 0)
         return KalgWalk
     end
     local KalgWalk = KalgWalk()
@@ -902,7 +902,7 @@ end
 
 local function KalgerionTask()
     --
-    local KalgerionCheck = WPOINT.new(3278, 3876, 0)
+    local KalgerionCheck = WPOINT.new(3288, 3874, 0)
     --
     if API.PInAreaW(KalgerionCheck, 50) then
         repeat
@@ -1109,7 +1109,7 @@ local function WildyAbyssLordTP()
     API.KeyboardPress2(0x32, 60, 100) -- key number 2 
     API.RandomSleep2(1200, 600, 1500)
     API.WaitUntilMovingandAnimEnds()
-    API.RandomSleep2(2600, 1200, 2000)
+    API.RandomSleep2(3000, 1400, 2000)
 end
 
 local function AbyssBeastsSlayer()
@@ -1415,7 +1415,8 @@ local function TaskPicker() -- it picks by order
     elseif API.Select_Option("glacors") then
         slayerTask = "Glacors (Wilderness)"
     end
-    API.RandomSleep2(400, 600, 800)
+    print("Sleeping in TaskPicker()")
+    API.RandomSleep2(1500, 1000, 400)
 end
 
 local function TaskDoer()
