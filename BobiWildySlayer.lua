@@ -974,10 +974,10 @@ end
 local function HydrixSlayer()
     --
     local function randomizeHydrixArea()
-        local HydrixCheck = WPOINT.new(3028 + math.random(-2, 2), 3890 + math.random(-2, 2), 0)
+        local HydrixCheck = WPOINT.new(3033 + math.random(-2, 2), 3891 + math.random(-2, 2), 0)
         return HydrixCheck
     end
-    local HydrixAreaCheck = WPOINT.new(3028, 3890, 0)
+    local HydrixAreaCheck = WPOINT.new(3033, 3891, 0)
     local HydrixCheck = randomizeHydrixArea()
     --
     if findNPC(29348, 50) then
@@ -1102,7 +1102,7 @@ end
 
 local function WildyAbyssLordTP()
     API.RandomSleep2(800, 600, 800)
-    API.DoAction_Interface(0xffffffff, 0x9410, 2, 1670, 84, -1, API.OFF_ACT_GeneralInterface_route) -- wildy swrd tp
+    API.DoAction_Ability("Wilderness sword", 2, API.OFF_ACT_GeneralInterface_route) -- wildy swrd tp
     API.RandomSleep2(1200, 600, 1500)
     API.KeyboardPress2(0x31, 60, 100) -- key number 1 
     API.RandomSleep2(1200, 600, 1500)
