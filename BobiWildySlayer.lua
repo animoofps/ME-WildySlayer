@@ -881,9 +881,9 @@ end
 
 local function KalgerionSlayer()
     --
-    local KalgerionCheck = WPOINT.new(3288, 3874, 0)
+    local KalgerionCheck = WPOINT.new(3290, 3875, 0)
     local function KalgWalk()
-        local KalgWalk = WPOINT.new(3288 + math.random(-2, 2), 3874 + math.random(-2, 2), 0)
+        local KalgWalk = WPOINT.new(3290 + math.random(-2, 2), 3875 + math.random(-2, 2), 0)
         return KalgWalk
     end
     local KalgWalk = KalgWalk()
@@ -896,7 +896,7 @@ local function KalgerionSlayer()
         eatfood()
         loot()
         PrayerCheck()
-        if API.PInAreaW(KalgerionCheck, 5) then
+        if API.PInAreaW(KalgerionCheck, 10) then
             if not hasValidTarget() then
                 API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29345}, 50, false, 100)
                 API.RandomSleep2(800, 600, 1200)
@@ -904,7 +904,7 @@ local function KalgerionSlayer()
         else
             print("Not inside the area check, going back")
             API.DoAction_WalkerW(KalgWalk)
-            API.RandomSleep2(800, 600, 1000)
+            API.RandomSleep2(400, 600, 200)
         end
     end
 end
@@ -983,10 +983,10 @@ end
 local function HydrixSlayer()
     --
     local function randomizeHydrixArea()
-        local HydrixCheck = WPOINT.new(3033 + math.random(-2, 2), 3891 + math.random(-2, 2), 0)
+        local HydrixCheck = WPOINT.new(3043 + math.random(-2, 2), 3892 + math.random(-2, 2), 0)
         return HydrixCheck
     end
-    local HydrixAreaCheck = WPOINT.new(3033, 3891, 0)
+    local HydrixAreaCheck = WPOINT.new(3043, 3892, 0)
     local HydrixCheck = randomizeHydrixArea()
     --
     if findNPC(29348, 50) then
@@ -1471,7 +1471,7 @@ function eatfood()
     if hp < 35 then
         print("Teleporting out")
         GuildTP()
-        print("Your hp was " .. hp .. "%, teleported you back to Max guild")
+        print("Your hp was " .. hp .. " %, teleported you back to Max guild")
         PrayerOff()
         TaskDoer()
     end
