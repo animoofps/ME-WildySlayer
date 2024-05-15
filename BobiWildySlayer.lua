@@ -10,6 +10,15 @@ local function hasFood()
 end
 
 local itemIdsToLoot = {37227, -- congealed blood
+15270, -- Raw rocktail
+35009, -- Hardened dragon bones
+8783, -- Mahogany plank
+53508, -- Large blunt necronium salvage
+51104, -- Medium spiky orikalkum salvage
+44815, -- Dark animica stone spirit
+44814, -- Light animica stone spirit
+1516, -- Yew logs
+47315, -- Huge plated rune salvage
 1762, -- soft clay
 31867, -- hydrix bolt tips
 28547, -- Crystal triskelion fragment 1
@@ -383,17 +392,17 @@ local function NecromancyBonePrayerPreset() -- necro loadout with dragontooth ne
     API.RandomSleep2(800, 400, 600)
 end
 
-local function MammothsSlayer() -- FULLFIX , stil a bit clunky, check out why it spams mammoths sometimes
+local function MammothsSlayer()
     if findNPC(29343, 50) then
+        loot()
+        eatfood()
         if not UTILS.isSoulSplitting() then
             API.RandomSleep2(200, 500, 300)
             API.DoAction_Ability("Soul Split", 1, API.OFF_ACT_GeneralInterface_route)
         end
-        loot()
-        eatfood()
-        if not hasValidTarget() then
+        if not hasValidTarget() and not API.ReadPlayerMovin2() then
             API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29343}, 50, false, 100)
-            API.RandomSleep2(1400, 1000, 1500)
+            API.RandomSleep2(800, 400, 1200)
         end
     end
 end
