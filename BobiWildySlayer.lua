@@ -1369,6 +1369,7 @@ local function RipperDemonsTask() -- just cancels the task for now, not sure how
         API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 551, -1, API.OFF_ACT_GeneralInterface_route) -- clicks on cancel task
         API.RandomSleep2(800, 600, 800)
         API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 896, -1, 3808) -- clicks on X to exit overlay
+        API.RandomSleep2(800, 600, 800)
     end
 end
 
@@ -1536,4 +1537,5 @@ end
 6. Acheron Mammoths special attack melts, do something about it 
 
 7. Died on wyverns, deathcheck also doesn't work. FIX BOTH!!!!!!!!!! (removed death check for now)
+
 --]]
