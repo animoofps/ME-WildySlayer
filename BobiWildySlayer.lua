@@ -41,6 +41,7 @@ local itemIdsToLoot = {37227, -- congealed blood
 21787, -- Steadfast boots
 21776, -- Shards of Armadyl
 11235, -- Dark bow
+42661, -- Aura refresh
 42009, -- Sealed clue scroll (elite)
 39814, -- Hazelmere's signet ring
 48769, -- Ciku seed
@@ -125,7 +126,6 @@ local itemIdsToLoot = {37227, -- congealed blood
 566, -- soul rune
 4153, -- granite maul
 20667, -- vecna skull
-12539, -- grenwall spikes
 27157, -- Demon slayer circlet
 27159, -- Demon slayer skirt
 27161, -- Demon slayer torso
@@ -1357,6 +1357,21 @@ local function AbyssLordTask()
     end
 end
 
+local function RipperDemonsTask() -- just cancels the task for now, not sure how to fight those shits
+    if not findNPC(6537, 15) then
+        MandrithTP()
+    else
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route4, {6537}, 50) -- clicks on npc
+        API.RandomSleep2(800, 600, 800)
+        API.WaitUntilMovingEnds()
+        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 18, -1, API.OFF_ACT_GeneralInterface_route) -- CLICKS ON ASSIGNMENT
+        API.RandomSleep2(1200, 600, 800)
+        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 551, -1, API.OFF_ACT_GeneralInterface_route) -- clicks on cancel task
+        API.RandomSleep2(800, 600, 800)
+        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 896, -1, 3808) -- clicks on X to exit overlay
+    end
+end
+
 local interface2 = API.ScanForInterfaceTest2Get(false, {{1639, 3, -1, -1, 0}, {1639, 5, -1, 3, 0}, {1639, 8, -1, 5, 0},
                                                         {1639, 11, -1, 8, 0}})
 local slayerTask = interface2[1].textids
@@ -1380,7 +1395,8 @@ local TaskLocalization = {
     ["Living wyverns (Wilderness)"] = WyvernTask,
     ["Abyssal lords (Wilderness)"] = AbyssLordTask,
     ["Gargoyles (Wilderness)"] = GargoylesTask,
-    ["Glacors (Wilderness)"] = GlacorsTask
+    ["Glacors (Wilderness)"] = GlacorsTask,
+    ["Ripper demons (Wilderness)"] = RipperDemonsTask
 }
 
 local function TaskPicker() -- it picks by order
@@ -1423,6 +1439,8 @@ local function TaskPicker() -- it picks by order
         slayerTask = "Gargoyles (Wilderness)"
     elseif API.Select_Option("glacors") then
         slayerTask = "Glacors (Wilderness)"
+    elseif API.Select_Option("ripper demons") then
+        slayerTask = "Ripper demons (Wilderness)"
     end
     print("Sleeping in TaskPicker()")
     API.RandomSleep2(1500, 1000, 400)
@@ -1518,5 +1536,4 @@ end
 6. Acheron Mammoths special attack melts, do something about it 
 
 7. Died on wyverns, deathcheck also doesn't work. FIX BOTH!!!!!!!!!! (removed death check for now)
-
 --]]
