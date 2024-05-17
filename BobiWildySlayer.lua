@@ -11,6 +11,7 @@ end
 
 local itemIdsToLoot = {37227, -- congealed blood
 15270, -- Raw rocktail
+31465, -- Kal'gerion battle commendation
 35009, -- Hardened dragon bones
 8783, -- Mahogany plank
 53508, -- Large blunt necronium salvage
@@ -367,7 +368,7 @@ local function Bank()
         print("Continuing with the task after renewing prayer!")
         API.RandomSleep2(400, 400, 600)
         API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, {19918}, 50)
-        API.RandomSleep2(1500, 800, 1200)
+        API.RandomSleep2(2500, 1600, 2000)
         API.WaitUntilMovingEnds()
         API.DoBankPin(PIN)
         API.RandomSleep2(600, 400, 800)
@@ -1364,10 +1365,11 @@ local function RipperDemonsTask() -- just cancels the task for now, not sure how
         API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route4, {6537}, 50) -- clicks on npc
         API.RandomSleep2(800, 600, 800)
         API.WaitUntilMovingEnds()
-        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 18, -1, API.OFF_ACT_GeneralInterface_route) -- CLICKS ON ASSIGNMENT
         API.RandomSleep2(1200, 600, 800)
+        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 18, -1, API.OFF_ACT_GeneralInterface_route) -- CLICKS ON ASSIGNMENT
+        API.RandomSleep2(2500, 1600, 1000)
         API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 551, -1, API.OFF_ACT_GeneralInterface_route) -- clicks on cancel task
-        API.RandomSleep2(800, 600, 800)
+        API.RandomSleep2(1500, 600, 1000)
         API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 896, -1, 3808) -- clicks on X to exit overlay
         API.RandomSleep2(800, 600, 800)
     end
