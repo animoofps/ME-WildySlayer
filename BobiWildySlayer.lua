@@ -373,6 +373,7 @@ local function Bank()
         API.DoBankPin(PIN)
         API.RandomSleep2(600, 400, 800)
     else
+        API.RandomSleep2(600, 400, 800)
         API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, {19918}, 50)
         API.RandomSleep2(1500, 800, 1200)
         API.WaitUntilMovingEnds()
@@ -483,7 +484,7 @@ local function OnyxDragonsTask()
 end
 
 local function AbyssDemonSlayer()
-    if findNPC(1615, 50) then
+    if findNPC(29342, 50) then
         loot()
         eatfood()
         if not hasValidTarget() then
@@ -491,7 +492,7 @@ local function AbyssDemonSlayer()
                 API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21502}, 50, false, 100)
                 API.RandomSleep2(1200, 600, 400)
             else
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {1615}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29342}, 50, false, 100)
                 API.RandomSleep2(1200, 600, 400)
             end
         end
@@ -501,11 +502,11 @@ end
 local function AbyssDemonTask()
     --
     local function randomizeAbyssDemonsLocation()
-        local AbyssDemonsLocation = WPOINT.new(3217 + math.random(-5, 5), 3649 + math.random(-5, 5), 0)
+        local AbyssDemonsLocation = WPOINT.new(3051 + math.random(-5, 5), 3766 + math.random(-5, 5), 0)
         return AbyssDemonsLocation
     end
     local AbyssDemonsLocation = randomizeAbyssDemonsLocation()
-    local AbyssDemonsCheck = WPOINT.new(3217, 3649, 0)
+    local AbyssDemonsCheck = WPOINT.new(3051, 3766, 0)
     --
     if API.PInAreaW(AbyssDemonsCheck, 25) then
         repeat
