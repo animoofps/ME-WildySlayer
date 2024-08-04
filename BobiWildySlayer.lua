@@ -9,6 +9,11 @@ local function hasFood()
     return API.InvItemcount_String(food) > 0
 end
 
+local function findObj(objectid, distance)
+    local distance = distance or 15
+    return #API.GetAllObjArrayInteract({objectid}, distance, {0}) > 0
+end
+
 local itemIdsToLoot = {37227, -- congealed blood
 15270, -- Raw rocktail
 31465, -- Kal'gerion battle commendation
