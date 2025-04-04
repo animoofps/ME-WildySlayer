@@ -16,6 +16,7 @@ end
 
 local itemIdsToLoot = {37227, -- congealed blood
 15270, -- Raw rocktail
+55336, -- Ectoplasm
 31465, -- Kal'gerion battle commendation
 35009, -- Hardened dragon bones
 8783, -- Mahogany plank
@@ -250,15 +251,16 @@ function UTILS.dive(destinationTile)
 end
 
 local function combo()
-    API.DoAction_WalkerW(WPOINT.new(2973 + math.random(-2, 2), 3865 + math.random(-2, 2), 0))
-    API.RandomSleep2(1200, 800, 600)
+    API.DoAction_WalkerW(WPOINT.new(2978 + math.random(-2, 2), 3871 + math.random(-2, 2), 0))
+    API.RandomSleep2(2500, 800, 600)
     UTILS.surge()
-    API.DoAction_WalkerW(WPOINT.new(2973 + math.random(-2, 2), 3865 + math.random(-2, 2), 0))
-    API.RandomSleep2(1200, 800, 600)
+    API.RandomSleep2(200, 600, 400)
+    API.DoAction_WalkerW(WPOINT.new(2978 + math.random(-2, 2), 3871 + math.random(-2, 2), 0))
+    API.RandomSleep2(1200, 400, 600)
     UTILS.surge()
-    API.RandomSleep2(20, 10, 20)
+    API.RandomSleep2(100, 300, 200)
     UTILS.dive(WPOINT.new(safex, safey, safez))
-    API.RandomSleep2(200, 200, 200)
+    API.RandomSleep2(200, 400, 200)
     API.DoAction_WalkerW(WPOINT.new(safex, safey, safez))
     API.RandomSleep2(200, 300, 400)
 end
@@ -316,7 +318,6 @@ local function MandrithTP()
     API.KeyboardPress2(0x31, 60, 100) -- key number 1 
     API.RandomSleep2(1500, 1200, 800)
     API.WaitUntilMovingandAnimEnds()
-    API.RandomSleep2(1000, 600, 400)
 end
 
 local function MandrithTalk()
@@ -408,7 +409,7 @@ local function MammothsSlayer()
             API.DoAction_Ability("Soul Split", 1, API.OFF_ACT_GeneralInterface_route)
         end
         if not hasValidTarget() and not API.ReadPlayerMovin2() then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29343}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29343}, 50)
             API.RandomSleep2(800, 400, 1200)
         end
     end
@@ -452,7 +453,7 @@ local function OnyxSlayer()
         loot()
         eatfood()
         if not hasValidTarget() then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29347}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29347}, 50)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -494,10 +495,10 @@ local function AbyssDemonSlayer()
         eatfood()
         if not hasValidTarget() then
             if findNPC(21502, 50) then
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21502}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21502}, 50)
                 API.RandomSleep2(1200, 600, 400)
             else
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29342}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29342}, 50)
                 API.RandomSleep2(1200, 600, 400)
             end
         end
@@ -539,7 +540,7 @@ local function GargoylesSlayer()
         loot()
         eatfood()
         if not hasValidTarget() then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29354}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29354}, 50)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -628,10 +629,10 @@ local function DarkBeastSlayer()
         eatfood()
         if not hasValidTarget() then
             if findNPC(21498, 50) then -- big version of the monster
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21498}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21498}, 50)
                 API.RandomSleep2(1500, 1000, 600)
             end
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29346}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29346}, 50)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -664,7 +665,7 @@ local function DarkBeastTask()
         API.RandomSleep2(200, 400, 600)
         API.WaitUntilMovingEnds()
         if not findObj(65387, 50) then
-            API.DoAction_Object1(0x31, 0, {65386}, 50) -- open gates
+            API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {65386}, 50) -- open gates
             API.RandomSleep2(1200, 1000, 1500)
             API.WaitUntilMovingandAnimEnds()
         end
@@ -680,7 +681,7 @@ local function SoulGazersSlayer()
         eatfood()
         if not hasValidTarget() then
             if findNPC(25126, 50) then -- elite version
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {25126}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {25126}, 50)
                 API.RandomSleep2(1200, 800, 600)
                 if not UTILS.isDeflectMagic() then
                     print("Elite version spotted, turning Deflect Magic on")
@@ -693,7 +694,7 @@ local function SoulGazersSlayer()
                     API.RandomSleep2(200, 500, 300)
                     API.DoAction_Ability("Deflect Magic", 1, API.OFF_ACT_GeneralInterface_route)
                 end
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29350}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29350}, 50)
                 API.RandomSleep2(800, 400, 600)
             end
         end
@@ -735,40 +736,40 @@ local function RevenantsSlayer()
     loot()
     if not hasValidTarget() and not API.CheckAnim(5) then -- do apianimcheck because it was spazzing out on revenants
         if findNPC(13481, 50) then -- 1 Revenant dragon !
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13481}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13481}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13480, 50) then -- 2 Revenant knight
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13480}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13480}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13479, 50) then -- 3 Revenant dark beast !
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13479}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13479}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13478, 50) then -- 4Revenant ork
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13478}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13478}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13477, 50) then -- 5Revenant demon !
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13477}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13477}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13476, 50) then -- 6Revenant hellhound
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13476}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13476}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13475, 50) then -- 7 Revenant cyclops
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13475}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13475}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13474, 50) then -- 8 Revenant werewolf
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13474}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13474}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13473, 50) then -- 9 Revenant vampyre
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13473}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13473}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13472, 50) then -- 10 Revenant hobgoblin
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13472}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13472}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13471, 50) then -- 11 Revenant pyrefiend !
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13471}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13471}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(13470, 50) then -- 12Revenant icefiend
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13470}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {13470}, 50)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -797,10 +798,10 @@ local function RevenantsTask()
         end
         LODESTONES.Wilderness()
         API.WaitUntilMovingandAnimEnds()
-        API.DoAction_WalkerW(WPOINT.new(3088 + math.random(-3, 3), 3644 + math.random(-3, 3), 0))
+        API.DoAction_WalkerW(WPOINT.new(3082 + math.random(-3, 3), 3650 + math.random(-3, 3), 0))
         API.RandomSleep2(1200, 800, 1000)
         API.WaitUntilMovingEnds()
-        API.DoAction_Object_r(0x39, 0, {20600}, 100, WPOINT.new(3072, 3648, 0), 5)
+        API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {20600}, 50)
         API.RandomSleep2(1200, 800, 500)
         API.WaitUntilMovingandAnimEnds()
         API.RandomSleep2(1500, 1800, 2000)
@@ -829,7 +830,7 @@ local function WyvernSpot()
     if not API.PInArea(safex, 1, safey, 1, safez) then
         API.DoAction_WalkerW(WPOINT.new(safex, safey, safez))
         API.RandomSleep2(600, 400, 800)
-        API.WaitUntilMovingEnds()
+        API.WaitUntilMovingEnds(1, 5)
     end
 end
 
@@ -844,10 +845,10 @@ local function WyvernSlayer()
         end
         if not hasValidTarget() then
             if findNPC(21992, 50) then
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21992}, 9, false, 100)
-                API.RandomSleep2(1800, 800, 600)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {21992}, 9)
+                API.RandomSleep2(800, 800, 600)
             else
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29356}, 9, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29356}, 9)
                 API.RandomSleep2(800, 400, 600)
             end
         end
@@ -876,7 +877,7 @@ local function WyvernTask() -- check if it works properly
         API.RandomSleep2(200, 400, 600)
         API.WaitUntilMovingEnds()
         if not findObj(65387, 50) then
-            API.DoAction_Object1(0x31, 0, {65386}, 50) -- open gates
+            API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {65386}, 50) -- open gates
             API.RandomSleep2(1200, 1000, 1500)
             API.WaitUntilMovingandAnimEnds()
         end
@@ -905,7 +906,7 @@ local function KalgerionSlayer()
         PrayerCheck()
         if API.PInAreaW(KalgerionCheck, 10) then
             if not hasValidTarget() then
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29345}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29345}, 50)
                 API.RandomSleep2(800, 600, 1200)
             end
         else
@@ -939,11 +940,11 @@ local function KalgerionTask()
 end
 
 local function IceWyrmSlayer()
-    if findNPC(9462, 50) then -- mound  --9463 bez mounda
+    if findNPC(9462, 50) then -- mound  --9463 without mounda
         loot()
         eatfood()
         if not hasValidTarget() and not findNPC(9463, 50) then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {9462}, 50, false, 100)
+            API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {9462}, 50)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -977,7 +978,7 @@ local function IceWyrmTask()
         API.RandomSleep2(200, 400, 600)
         API.WaitUntilMovingEnds()
         if not findObj(65387, 50) then
-            API.DoAction_Object1(0x31, 0, {65386}, 50) -- open gates
+            API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {65386}, 50) -- open gates
             API.RandomSleep2(1200, 1000, 1500)
             API.WaitUntilMovingandAnimEnds()
         end
@@ -1005,7 +1006,7 @@ local function HydrixSlayer()
         eatfood()
         if API.PInAreaW(HydrixAreaCheck, 10) then
             if not hasValidTarget() then
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29348}, 50, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29348}, 50)
                 API.RandomSleep2(800, 400, 600)
             end
         else
@@ -1043,7 +1044,7 @@ local function HydrixDragonsTask()
         API.RandomSleep2(200, 400, 600)
         API.WaitUntilMovingEnds()
         if not findObj(65387, 50) then
-            API.DoAction_Object1(0x31, 0, {65386}, 50) -- open gates
+            API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {65386}, 50) -- open gates
             API.RandomSleep2(1200, 1000, 1500)
             API.WaitUntilMovingandAnimEnds()
         end
@@ -1069,11 +1070,11 @@ local function GreaterDemonBerserkersSlayer() -- removed need for soulsplit, add
         if API.PInAreaW(GreaterDemonBerserkerCheck, 4) then
             if not hasValidTarget() then
                 if findNPC(29363, 50) then
-                    API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29363}, 50, false, 100)
+                    API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29363}, 50)
                     API.RandomSleep2(1200, 800, 1600)
                     API.WaitUntilMovingEnds()
                 elseif findNPC(29360, 50) then
-                    API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29360}, 50, false, 100)
+                    API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29360}, 50)
                     API.RandomSleep2(1200, 800, 1600)
                     API.WaitUntilMovingEnds()
                 end
@@ -1116,7 +1117,7 @@ local function GreaterDemonBerserkersTask()
     end
 end
 
-local function WildyAbyssLordTP()
+local function WildyAbyssLordTP() -- tps to wildy farm
     API.RandomSleep2(800, 600, 800)
     API.DoAction_Ability("Wilderness sword", 2, API.OFF_ACT_GeneralInterface_route) -- wildy swrd tp
     API.RandomSleep2(1200, 600, 1500)
@@ -1133,8 +1134,7 @@ local function AbyssBeastsSlayer()
         loot()
         eatfood()
         if not hasValidTarget() then
-
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29351}, 25, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29351}, 25)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -1165,16 +1165,16 @@ local function GlacorsSlayer()
         eatfood()
         loot()
         if not hasValidTarget() then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29355}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29355}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(14302, 15) then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {14302}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {14302}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(14304, 15) then -- enduring
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {14304}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {14304}, 50)
             API.RandomSleep2(800, 400, 600)
         elseif findNPC(14303, 15) then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29355}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29355}, 50)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -1207,7 +1207,7 @@ local function GlacorsTask()
         API.RandomSleep2(200, 400, 600)
         API.WaitUntilMovingEnds()
         if not findObj(65387, 50) then
-            API.DoAction_Object1(0x31, 0, {65386}, 50) -- open gates
+            API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {65386}, 50) -- open gates
             API.RandomSleep2(1200, 1000, 1500)
             API.WaitUntilMovingandAnimEnds()
         end
@@ -1222,7 +1222,7 @@ local function BlackDemonsSlayer()
         loot()
         eatfood()
         if not hasValidTarget() then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29349}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29349}, 50)
             API.RandomSleep2(800, 400, 600)
         end
 
@@ -1264,7 +1264,7 @@ local function AbyssSavageSlayer()
         loot()
         eatfood()
         if not hasValidTarget() then
-            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29352}, 50, false, 100)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29352}, 50)
             API.RandomSleep2(800, 400, 600)
         end
     end
@@ -1321,10 +1321,10 @@ local function AbyssLordSlayer()
                 API.DoAction_Ability("Deflect Magic", 1, API.OFF_ACT_GeneralInterface_route)
             end
             if findNPC(28784, 10) then -- 28784 TENTACLES
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {28784}, 10, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {28784}, 10)
                 API.RandomSleep2(800, 400, 600)
             else
-                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29353}, 10, false, 100)
+                API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {29353}, 10)
                 API.RandomSleep2(800, 400, 600)
             end
         else
@@ -1492,7 +1492,7 @@ function eatfood()
         if eatFoodAB.id ~= 0 and eatFoodAB.enabled then
             print("Eating food")
             API.DoAction_Ability_Direct(eatFoodAB, 1, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(800, 600, 1000)
+            API.RandomSleep2(600, 400, 800)
         end
     end
     if hp < 35 then
@@ -1536,7 +1536,7 @@ end
 
 2. --fix worm special attack animation (no need but just in case)          --FULLFIX search it
 
-3. Onyx dragons doesn't pick items up
+3. Onyx dragons doesn't pick items up sometimes
 
 4. combo() too slow
 
