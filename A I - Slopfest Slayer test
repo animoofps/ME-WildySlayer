@@ -1,19 +1,11 @@
---[[
-    Bobi's Slayer (beta)
-    Automates various Wilderness Slayer tasks using Necromancy.
-    Requires API, UTILS, LODESTONES libraries.
-]] -- =============================================================================
--- Configuration & Setup
--- =============================================================================
 print("Bobi's Slayer (beta)")
-
 local API = require("api")
 local UTILS = require("utils")
 local LODESTONES = require("lodestones")
 
 -- User Settings
 local PIN = 1234
-local FOOD_NAME = "Ghostly sole" -- Use a descriptive constant name
+local FOOD_NAME = "Ghostly sole"
 local EAT_HP_THRESHOLD = 65 -- HP percentage to eat food
 local LOW_HP_TELEPORT_THRESHOLD = 35 -- HP percentage to teleport out
 local DEFAULT_INTERACT_DISTANCE = 15
