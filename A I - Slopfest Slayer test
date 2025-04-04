@@ -1,0 +1,1971 @@
+--[[
+    Bobi's Slayer (beta)
+    Automates various Wilderness Slayer tasks using Necromancy.
+    Requires API, UTILS, LODESTONES libraries.
+]] -- =============================================================================
+-- Configuration & Setup
+-- =============================================================================
+print("Bobi's Slayer (beta)")
+
+local API = require("api")
+local UTILS = require("utils")
+local LODESTONES = require("lodestones")
+
+-- User Settings
+local PIN = 1234
+local FOOD_NAME = "Ghostly sole" -- Use a descriptive constant name
+local EAT_HP_THRESHOLD = 65 -- HP percentage to eat food
+local LOW_HP_TELEPORT_THRESHOLD = 35 -- HP percentage to teleport out
+local DEFAULT_INTERACT_DISTANCE = 15
+local DEFAULT_NPC_FIND_DISTANCE = 20
+local DEFAULT_LOOT_DISTANCE = 10
+
+-- Constants for IDs (Improves readability and maintainability)
+local NPC_ID = {
+    MANDRITH = 6537,
+    MAX_GUILD_BANKER = 19918,
+    DEATH = 27299,
+    -- Task NPCs (Base IDs, Elite/variants handled in slayer logic)
+    ACHERON_MAMMOTH = 29343,
+    ONYX_DRAGON = 29347,
+    ABYSSAL_DEMON = 29342,
+    ABYSSAL_DEMON_BIG = 21502,
+    GARGOYLE = 29354,
+    LAVA_WYRM_MOUND = 2417,
+    LAVA_WYRM = 20630,
+    DARK_BEAST = 29346,
+    DARK_BEAST_BIG = 21498,
+    SOULGAZER = 29350,
+    SOULGAZER_ELITE = 25126,
+    REVENANT_DRAGON = 13481,
+    REVENANT_KNIGHT = 13480,
+    REVENANT_DARK_BEAST = 13479,
+    REVENANT_ORK = 13478,
+    REVENANT_DEMON = 13477,
+    REVENANT_HELLHOUND = 13476,
+    REVENANT_CYCLOPS = 13475,
+    REVENANT_WEREWOLF = 13474,
+    REVENANT_VAMPYRE = 13473,
+    REVENANT_HOBGOBLIN = 13472,
+    REVENANT_PYREFIEND = 13471,
+    REVENANT_ICEFIEND = 13470,
+    FORLORN_SHADE = 4700, -- Inside rev caves
+    LIVING_WYVERN = 29356,
+    LIVING_WYVERN_BIG = 21992,
+    KALGERION_DEMON = 29345,
+    ICE_WYRM_MOUND = 9462,
+    ICE_WYRM = 9463,
+    HYDRIX_DRAGON = 29348,
+    GREATER_DEMON_BERSERKER = 29363,
+    GREATER_DEMON_ASH_LORD = 29360,
+    ABYSSAL_BEAST = 29351,
+    GLACOR = 29355,
+    GLACITE_ENDURING = 14304,
+    GLACITE_SAIGN = 14303,
+    GLACITE_UNSTABLE = 14302,
+    BLACK_DEMON = 29349,
+    ABYSSAL_SAVAGE = 29352,
+    ABYSSAL_LORD = 29353,
+    ABYSSAL_LORD_TENTACLE = 28784
+    -- RIPPER_DEMON = 29365 -- Add if needed
+}
+
+local NPC_ANIM = {
+    MAMMOTH_CHARGE_ANIM = 27820
+}
+
+local OBJECT_ID = {
+    MAX_GUILD_PRAYER_ALTAR = 92278,
+    WILDY_GATE_CLOSED = 65386,
+    WILDY_GATE_OPEN = 65387,
+    REV_CAVE_ENTRANCE = 20600
+}
+
+local ABILITY_NAME = {
+    SURGE = "Surge",
+    DIVE = "Dive",
+    EAT_FOOD = "Eat Food",
+    DEFLECT_MAGIC = "Deflect Magic",
+    DEFLECT_MELEE = "Deflect Melee",
+    SOUL_SPLIT = "Soul Split",
+    HOODED_SLAYER_CAPE = "Hooded slayer cape",
+    MAX_GUILD_TELEPORT = "Max guild Teleport",
+    ANNAKARL_TELEPORT = "Annakarl Teleport",
+    SUPER_PRAYER_RENEWAL = "Super prayer renewal potion",
+    -- WYRMFIRE_POTION = "Wyrmfire potion", -- Add if uncommented later
+    WILDERNESS_SWORD = "Wilderness sword"
+}
+
+local PRESET = {
+    NECRO_BLOOD = 5, -- Bank preset number for Necro + Blood/Law runes
+    NECRO_BONEPRAYER = 6 -- Bank preset number for Necro + Bonecrusher/Dragontooth
+}
+
+-- Item IDs to Loot (Removed duplicates and formatted for readability)
+-- Function to remove duplicates from a table
+local function uniqueTable(tbl)
+    local seen = {}
+    local result = {}
+    for _, v in ipairs(tbl) do
+        if not seen[v] then
+            table.insert(result, v)
+            seen[v] = true
+        end
+    end
+    return result
+end
+
+local itemIdsToLoot_Raw = { -- Common/Valuable Drops
+995, -- Coins
+6571, -- Uncut onyx
+6573, -- Onyx
+1618, -- Uncut diamond
+1602, -- Diamond
+1616, -- Dragonstone
+1632, -- Uncut dragonstone
+1620, -- Uncut ruby
+1604, -- Ruby gem
+1622, -- Uncut emerald
+1608, -- Sapphire gem
+537, -- Dragon bones
+35009, -- Hardened dragon bones
+11286, -- Draconic visage
+4151, -- Abyssal whip
+52931, -- Abyssal scourge
+30828, -- Abyssal orb
+30825, -- Abyssal wand
+7979, -- Abyssal head
+52926, -- Jaws of the Abyss
+4153, -- Granite maul
+11235, -- Dark bow
+20667, -- Vecna skull
+39814, -- Hazelmere's signet ring
+34151, -- Wyrm spike
+34153, -- Wyrm heart
+34156, -- Wyrm scalp
+35985, -- Wyvern crossbow
+35989, -- Wyvern spikes
+6816, -- Wyvern bones
+36004, -- Ripper claw
+36008, -- Offhand ripper claw
+49283, -- Parasitic orb
+41582, -- Hexhunter bow
+41581, -- Soulgazer's charm
+34160, -- Searing ashes
+31465, -- Kal'gerion battle commendation
+31867, -- Hydrix bolt tips
+37227, -- Congealed blood
+55336, -- Ectoplasm
+38360, -- Revenant drop enhancer
+14875, -- Revenant Spirit
+14876, -- Ancient statuette .. up to 14885
+14877, 14878, 14879, 14881, 14882, 14883, 14884, 14885, 13902, -- Statius's warhammer
+13884, -- Statius's platebody
+13890, -- Statius's platelegs
+47660, -- Statius's full helm
+13887, -- Vesta's plateskirt
+13905, -- Vesta's spear
+13899, -- Vesta's longsword
+13893, -- Zuriel's hood
+13864, -- Zuriel's robe top
+13858, -- Zuriel's robe bottom
+13876, -- Zuriel's staff
+13873, -- Morrigan's leather body
+13896, -- Morrigan's leather chaps
+13870, -- Morrigan's coif
+13883, -- Morrigan's throwing axe
+13879, -- Morrigan's javelin
+13861, -- Corrupt Statius's warhammer
+13926, -- Corrupt Vesta's longsword
+13923, -- Corrupt Vesta's spear
+13929, -- Corrupt Zuriel's staff
+13941, -- Zamorak medallion
+13979, -- Corrupt dragon scimi
+39068, -- Adrenaline crystal noted
+39065, -- Wilderness hilt
+39895, -- Gemstone hauberk
+39897, -- Gemstone greaves
+29863, -- Sirenic scale
+21793, -- Ragefire boots
+21790, -- Glaiven boots
+21787, -- Steadfast boots
+21776, -- Shards of Armadyl
+-- Clues & Keys
+42009, -- Sealed clue scroll (elite)
+42008, -- Clue scroll hard
+42010, -- Master clue scroll
+28547, -- Crystal triskelion fragment 1
+28548, -- Crystal triskelion fragment 2
+28549, -- Crystal triskelion fragment 3
+990, -- Crystal key
+52940, -- Gate key (Abyssal Lord)
+36001, -- Raptor key part 1
+36012, -- Raptor key part 2
+36042, -- Raptor key part 3
+36065, -- Raptor key part 4
+53502, -- Wildy chest
+-- Skilling/Materials
+15270, -- Raw rocktail
+8783, -- Mahogany plank
+8836, -- Mahogany logs
+1516, -- Yew logs
+1514, -- Magic logs
+1762, -- Soft clay
+1778, -- Bowstring
+1752, -- Blue d'hide
+572, -- Water orb
+238, -- Unicorn horn
+2971, -- Mort myre fungus
+1988, -- Grapes
+7937, -- Rune essence
+560, -- Death rune
+566, -- Soul rune
+565, -- Blood rune
+563, -- Law rune
+4698, -- Mud runes
+-- Salvage
+53508, -- Large blunt necronium salvage
+51104, -- Medium spiky orikalkum salvage
+47315, -- Huge plated rune salvage
+-- Stone Spirits
+44815, -- Dark animica stone spirit
+44814, -- Light animica stone spirit
+44803, -- Gold spirit
+44808, -- Runite stone spirit
+44806, -- Luminite stone spirit
+44812, -- Phasma spirits
+44811, -- Necrite spirits
+-- Seeds
+48769, -- Ciku seed
+5296, -- Toadflax seed
+21621, -- Fellstalk seed
+12175, -- Spirit weed
+37952, -- Bloodweed seed
+-- Potions/Herbs
+140, -- Prayer pot (?) Assume (4) or similar 2434
+2434, -- Prayer potion (4) Might be intended by 140
+2435, -- prayer potion (4) duplicate?
+3025, -- Super restore (4)
+208, -- Grimy ranarr
+216, -- Grimy cadantine
+3050, -- Grimy toadflax
+218, -- Grimy dwarf weed
+2486, -- Grimy lantadyme
+-- Other Gear/Weapons
+1249, -- Dragon spear
+1434, -- Dragon mace
+25689, -- Off-hand dragon mace
+1305, -- Dragon longsword
+25740, -- Offhand dragon longsword
+1149, -- Dragon helm (duplicate?)
+1150, -- Dragon helm (duplicate?)
+1644, -- Diamond ring
+2573, -- Ring of wealth
+1392, -- Staff (Battlestaff?)
+-- Effigies
+18778, -- Starved ancient effigy
+18779, -- Nourished ancient effigy
+18780, -- Sated ancient effigy
+18781, -- Gorged ancient effigy
+-- Bolt Tips/Ammo
+9144, -- Rune bolts
+9244, -- Dragon bolts
+9245, -- Onyx bolts (e)
+9191, -- Ruby bolt tips
+9194, -- Onyx bolt tips
+9192, -- Diamond bolt tips
+9193, -- Dragonstone bolt tips
+11232, -- Dragon dart tips
+11237, -- Dragon arrowheads
+44, -- Rune arrow tips
+53, -- Headless arrows
+29729, -- Dark arrowheads
+892, -- Rune arrows
+34235, -- Wild arrows
+-- Misc
+42893, -- Cursed amascut sand
+42661, -- Aura refresh
+36814, -- Mimic token
+54019, -- Catalytic anima stone
+27157, -- Demon slayer circlet
+27159, -- Demon slayer skirt
+27161, -- Demon slayer torso
+27163, -- Demon boots
+27165, -- Demon slayer gloves
+44210, -- Adrenaline urn
+20267, -- Accursed ashes
+20269, -- Infernal ashes
+36023, -- Mammoth tusk
+41589, -- Stalker essence
+52937, -- Abyss flesh
+-- Brawling Gloves
+13845, 13846, 13847, 13848, 13849, 13850, 13851, 13852, 13853, 13854, 13855, 13856, 13857, 385 -- Shark (redundant with FOOD_NAME?) Add if needed specifically for loot
+}
+local itemIdsToLoot = uniqueTable(itemIdsToLoot_Raw)
+
+-- =============================================================================
+-- Utility Functions
+-- =============================================================================
+
+--- Checks if the player has the configured food in inventory.
+---@return boolean
+local function hasFood()
+    return API.InvItemcount_String(FOOD_NAME) > 0
+end
+
+--- Checks if the player needs to eat based on HP percentage.
+---@return boolean
+local function needsToEat()
+    return API.GetHPrecent() < EAT_HP_THRESHOLD
+end
+
+--- Checks if the player's HP is critically low.
+---@return boolean
+local function isHpCritical()
+    return API.GetHPrecent() < LOW_HP_TELEPORT_THRESHOLD
+end
+
+--- Finds the first interactable object with the given ID within a distance.
+---@param objectId number | table The object ID or a table of IDs.
+---@param distance number? Optional search distance (defaults to DEFAULT_INTERACT_DISTANCE).
+---@return AllObject | false The found object or false.
+local function findObj(objectId, distance)
+    local searchDist = distance or DEFAULT_INTERACT_DISTANCE
+    local objIds = type(objectId) == "table" and objectId or {objectId}
+    local objects = API.GetAllObjArrayInteract(objIds, searchDist, {0}) -- Type 0 for objects
+    return #objects > 0 and objects[1] or false
+end
+
+--- Finds the first interactable NPC with the given ID within a distance.
+---@param npcId number | table The NPC ID or a table of IDs.
+---@param distance number? Optional search distance (defaults to DEFAULT_NPC_FIND_DISTANCE).
+---@return AllObject | false The found NPC object or false.
+local function findNPC(npcId, distance)
+    local searchDist = distance or DEFAULT_NPC_FIND_DISTANCE
+    local npcIds = type(npcId) == "table" and npcId or {npcId}
+    local npcs = API.GetAllObjArrayInteract(npcIds, searchDist, {1}) -- Type 1 for NPCs
+    return #npcs > 0 and npcs[1] or false
+end
+
+local function hasValidTarget()
+    local interacting = API.ReadLpInteracting()
+    if interacting.Id ~= 0 and interacting.Life >= 0 then
+        return true
+    else
+        return false
+    end
+end
+
+--- Attempts to loot nearby items specified in `itemIdsToLoot`. Eats food if inventory is full.
+local function lootGroundItems()
+    if not API.InvFull_() then
+        API.DoAction_Loot_w(itemIdsToLoot, DEFAULT_LOOT_DISTANCE, API.PlayerCoordfloat(), 10) -- Using radius 10 as in original
+        API.RandomSleep2(600, 200, 300) -- Slightly shorter sleep after loot attempt
+        -- API.WaitUntilMovingEnds(2, 3) -- Optional: wait shortly if looting involves movement
+    elseif hasFood() then
+        print("Inventory full, eating food for space...")
+        API.DoAction_Ability(ABILITY_NAME.EAT_FOOD, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(700, 300, 500) -- Slightly longer sleep after eating
+    else
+        print("Inventory full, no food to eat!")
+        -- Consider adding logic here, like teleporting out or stopping script
+    end
+end
+
+--- Eats food if HP is below the threshold. Teleports out if HP is critical.
+---@return boolean Returns true if teleported, false otherwise.
+local function handleHealth()
+    if isHpCritical() then
+        print("HP critical (" .. API.GetHPrecent() .. "%), teleporting out!")
+        GuildTP() -- Assuming GuildTP is safe teleport
+        PrayerOff() -- Turn off prayers after teleporting
+        return true -- Indicate that we teleported
+    elseif needsToEat() then
+        local eatFoodAB = API.GetABs_name(ABILITY_NAME.EAT_FOOD)
+        if eatFoodAB and eatFoodAB.id ~= 0 and eatFoodAB.enabled then
+            if hasFood() then
+                print("Eating food at " .. API.GetHPrecent() .. "% HP")
+                API.DoAction_Ability_Direct(eatFoodAB, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(600, 400, 800)
+            else
+                print("Low HP but no food!")
+                -- Maybe teleport here too?
+            end
+        elseif not hasFood() then
+            print("Low HP but no food!")
+            -- Maybe teleport here too?
+        end
+    end
+    return false -- Did not teleport
+end
+
+--- Checks prayer points and uses a renewal potion if low, or teleports if out of potions/prayer.
+---@return boolean Returns true if teleported, false otherwise.
+function PrayerCheck()
+    local currentPrayer = API.GetPray_()
+    local hasRenewal = API.InvItemcount_String(ABILITY_NAME.SUPER_PRAYER_RENEWAL) >= 1
+
+    if currentPrayer < 100 and hasRenewal then
+        print("Prayer low (" .. currentPrayer .. "), drinking prayer renewal.")
+        API.RandomSleep2(400, 300, 500)
+        API.DoAction_Ability(ABILITY_NAME.SUPER_PRAYER_RENEWAL, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(400, 200, 300)
+    elseif currentPrayer == 0 and not hasRenewal then
+        print("Out of prayer and renewals, teleporting out!")
+        GuildTP()
+        print("Renewing prayer at the altar...")
+        API.RandomSleep2(400, 400, 600)
+        API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, {OBJECT_ID.MAX_GUILD_PRAYER_ALTAR}, 50)
+        API.RandomSleep2(1200, 800, 600)
+        API.WaitUntilMovingEnds()
+        print("Continuing with the task after renewing prayer!")
+        return true -- Indicate we teleported and handled prayer
+    end
+    return false -- Did not teleport
+end
+
+--- Turns off active overhead prayers (Deflect Magic/Melee or Soul Split).
+local function PrayerOff()
+    API.RandomSleep2(200, 400, 200)
+    -- Check prayers and turn off if active
+    if UTILS.isDeflectMagic() then
+        print("Turning Deflect Magic off")
+        API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(200, 400, 600)
+    elseif UTILS.isDeflectMelee() then
+        print("Turning Deflect Melee off")
+        API.DoAction_Ability(ABILITY_NAME.DEFLECT_MELEE, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(200, 400, 600)
+    elseif UTILS.isSoulSplitting() then
+        print("Turning Soul Split off")
+        API.DoAction_Ability(ABILITY_NAME.SOUL_SPLIT, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(200, 400, 600)
+    end
+end
+
+--- Generates a random waypoint near a base point.
+---@param baseX number The base X coordinate.
+---@param baseY number The base Y coordinate.
+---@param baseZ number The base Z coordinate (usually 0).
+---@param rangeX number The random range for X (+/-).
+---@param rangeY number The random range for Y (+/-).
+---@return WPOINT The randomized waypoint.
+local function randomizeWaypoint(baseX, baseY, baseZ, rangeX, rangeY)
+    local randX = baseX + math.random(-rangeX, rangeX)
+    local randY = baseY + math.random(-rangeY, rangeY)
+    return WPOINT.new(randX, randY, baseZ)
+end
+
+-- =============================================================================
+-- Movement & Action Helpers
+-- =============================================================================
+
+-- Surge ability (already provided by UTILS, just ensure it's correct)
+function UTILS.surge()
+    local surgeAB = UTILS.getSkillOnBar(ABILITY_NAME.SURGE)
+    if surgeAB ~= nil then
+        print("Surging")
+        return API.DoAction_Ability_Direct(surgeAB, 1, API.OFF_ACT_GeneralInterface_route)
+    end
+    print("Surge ability not found on bar")
+    return false
+end
+
+-- Dive ability (already provided by UTILS, ensure correct usage)
+function UTILS.dive(destinationTile)
+    local diveAB = UTILS.getSkillOnBar(ABILITY_NAME.DIVE)
+    if diveAB ~= nil then
+        print("Diving to " .. destinationTile.x .. "," .. destinationTile.y)
+        -- Note: API.DoAction_Dive_Tile requires the ability ID/struct, not just using the name.
+        -- Assuming getSkillOnBar returns the necessary struct.
+        return API.DoAction_Dive_Tile(destinationTile) -- This API call might need the ability struct, check API docs.
+        -- If API.DoAction_Dive_Tile doesn't work directly with the tile like this,
+        -- you might need to activate Dive first, then click the tile.
+        -- Example alternative (check API):
+        -- API.DoAction_Ability_Direct(diveAB, 1, API.OFF_ACT_GeneralInterface_route)
+        -- API.RandomSleep2(50, 100, 50)
+        -- API.DoAction_Tile(destinationTile) -- Or SpecialWalk? Check API.
+    end
+    print("Dive ability not found on bar")
+    return false
+end
+
+-- Specific combo for Wyverns (Surge/Dive)
+local safeWyvernSpot = randomizeWaypoint(2960, 3882, 0, 2, 1) -- Calculate once
+
+local function wyvernComboMovement()
+    local startPoint = randomizeWaypoint(2978, 3871, 0, 2, 2)
+    print("Executing Wyvern combo movement...")
+    API.DoAction_WalkerW(startPoint)
+    API.RandomSleep2(2000, 500, 600) -- Slightly less initial wait maybe?
+    API.WaitUntilMovingEnds(3, 4)
+
+    UTILS.surge()
+    API.RandomSleep2(1000, 400, 500) -- Wait for surge animation/cooldown?
+    API.WaitUntilMovingEnds(2, 3)
+
+    -- Optional: Second walk/surge if needed, original had it
+    -- API.DoAction_WalkerW(randomizeWaypoint(2978, 3871, 0, 2, 2))
+    -- API.RandomSleep2(1000, 300, 500)
+    -- UTILS.surge()
+    -- API.RandomSleep2(100, 200, 100)
+
+    UTILS.dive(safeWyvernSpot)
+    API.RandomSleep2(200, 400, 200)
+    API.WaitUntilMovingEnds(2, 3) -- Wait for dive to land
+
+    API.DoAction_WalkerW(safeWyvernSpot) -- Ensure we are exactly on the spot
+    API.RandomSleep2(200, 300, 400)
+    API.WaitUntilMovingEnds(2, 3)
+    print("Wyvern combo movement complete.")
+end
+
+-- Safespot logic for Wyverns
+local function ensureWyvernSafespot()
+    if not API.PInArea(safeWyvernSpot.x, 1, safeWyvernSpot.y, 1, safeWyvernSpot.z) then
+        print("Not in Wyvern safespot, moving...")
+        API.DoAction_WalkerW(safeWyvernSpot)
+        API.RandomSleep2(500, 300, 600)
+        API.WaitUntilMovingEnds(3, 5)
+    end
+end
+
+-- Safespot logic for Greater Demons (Refined)
+local greaterDemonSafespot = WPOINT.new(3346, 3881, 0) -- Center of safespot area
+local greaterDemonSafespotRadius = 4 -- Radius from original PInAreaW check
+
+local function ensureGreaterDemonSafespot()
+    if not API.PInAreaW(greaterDemonSafespot, greaterDemonSafespotRadius) then
+        print("Not in Greater Demon safespot area, moving back...")
+        local targetSpot = randomizeWaypoint(greaterDemonSafespot.x, greaterDemonSafespot.y, greaterDemonSafespot.z, 1,
+            1) -- Move towards center
+        API.DoAction_WalkerW(targetSpot)
+        API.RandomSleep2(800, 600, 1200)
+        API.WaitUntilMovingandAnimEnds(4, 5)
+    end
+end
+
+-- Safespot logic for Abyssal Lords
+local abyssalLordSafespot = WPOINT.new(3173, 3884, 0)
+local abyssalLordSafespotRadius = 1
+
+local function ensureAbyssalLordSafespot()
+    if not API.PInAreaW(abyssalLordSafespot, abyssalLordSafespotRadius) then
+        print("Not in Abyssal Lord safespot, moving...")
+        API.DoAction_WalkerW(abyssalLordSafespot)
+        API.RandomSleep2(600, 400, 800)
+        API.WaitUntilMovingEnds(3, 5)
+    end
+end
+
+-- =============================================================================
+-- Banking & Teleporting
+-- =============================================================================
+
+--- Teleports to Max Guild.
+local function GuildTP()
+    print("Teleporting to Max Guild...")
+    API.RandomSleep2(800, 600, 300)
+    API.DoAction_Ability(ABILITY_NAME.MAX_GUILD_TELEPORT, 1, API.OFF_ACT_GeneralInterface_route)
+    API.RandomSleep2(1500, 1000, 1500) -- Slightly reduced max wait
+    API.WaitUntilMovingandAnimEnds() -- Wait longer for teleport
+    print("Arrived at Max Guild.")
+end
+
+--- Teleports to Mandrith using Slayer Cape.
+local function MandrithTP()
+    print("Teleporting to Mandrith...")
+    API.RandomSleep2(1000, 600, 800)
+    API.DoAction_Ability(ABILITY_NAME.HOODED_SLAYER_CAPE, 7, API.OFF_ACT_GeneralInterface_route) -- Option 7 for cape TP
+    API.RandomSleep2(800, 600, 1000)
+    API.KeyboardPress2(0x31, 60, 100) -- Press '1'
+    API.RandomSleep2(1500, 1200, 800)
+    API.WaitUntilMovingandAnimEnds() -- Wait longer for teleport
+    print("Arrived near Mandrith.")
+end
+
+--- Talks to Mandrith to get/check task.
+local function MandrithTalk()
+    print("Talking to Mandrith...")
+    API.RandomSleep2(200, 200, 400)
+    -- Ensure Mandrith is found before interacting
+    if findNPC(NPC_ID.MANDRITH, 15) then
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {NPC_ID.MANDRITH}, 15) -- Route 2 might be "Get-task" or similar
+        API.RandomSleep2(800, 400, 600)
+        API.WaitUntilMovingandAnimEnds(5, 5)
+        API.RandomSleep2(300, 400, 600)
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 0, 1191, 15, -1, API.OFF_ACT_GeneralInterface_Choose_option)
+        API.RandomSleep2(800, 400, 600)
+        print("Interaction with Mandrith complete.")
+    else
+        print("Mandrith not found nearby.")
+        -- Might need to teleport back if Mandrith isn't there after TPing
+        MandrithTP() -- Retry TP maybe? Or handle error differently.
+    end
+end
+
+--- Opens bank, handles PIN, optionally renews prayer.
+local function Bank()
+    print("Accessing bank...")
+    local needsPrayer = API.GetPray_() < 600
+    local banker = findNPC(NPC_ID.MAX_GUILD_BANKER, 50)
+
+    if not banker then
+        print("Banker not found, attempting Guild TP.")
+        GuildTP()
+        banker = findNPC(NPC_ID.MAX_GUILD_BANKER, 50)
+        if not banker then
+            print("Banker still not found after TP. Stopping banking.")
+            return false -- Indicate banking failed
+        end
+    end
+
+    if needsPrayer then
+        print("Prayer low (" .. API.GetPray_() .. "), renewing...")
+        API.RandomSleep2(400, 400, 600)
+        API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, {OBJECT_ID.MAX_GUILD_PRAYER_ALTAR}, 50)
+        API.RandomSleep2(2000, 1200, 1800) -- Wait for altar
+        API.WaitUntilMovingEnds()
+        print("Prayer renewed.")
+    end
+
+    API.RandomSleep2(600, 400, 800)
+    API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, {NPC_ID.MAX_GUILD_BANKER}, 50) -- Action 5 for Bank
+    API.RandomSleep2(1500, 800, 1200)
+    API.WaitUntilMovingEnds()
+
+    -- Handle Bank PIN only if bank isn't already open (check API for reliable bank open check)
+    -- API.BankOpen2() might not update instantly after clicking banker
+    API.RandomSleep2(500, 300, 500) -- Short wait for bank window potential opening
+    if not API.BankOpen2() then -- Check if bank actually needs PIN
+        API.DoBankPin(PIN)
+        API.RandomSleep2(800, 500, 900) -- Wait longer after PIN entry
+        if not API.BankOpen2() then
+            print("Failed to open bank after PIN.")
+            return false -- Indicate banking failed
+        end
+    end
+
+    print("Bank accessed.")
+    return true -- Indicate banking success
+end
+
+--- Loads a specified preset number.
+---@param presetNumber number The preset number to load.
+local function loadPreset(presetNumber)
+    print("Loading preset " .. presetNumber)
+    API.RandomSleep2(700, 300, 500)
+    local Number = 1
+    if presetNumber == PRESET.NECRO_BLOOD then
+        Number = 5
+    elseif presetNumber == PRESET.NECRO_BONEPRAYER then
+        Number = 6
+    end
+
+    API.DoAction_Interface(0x24, 0xffffffff, 1, 517, 119, Number, API.OFF_ACT_GeneralInterface_route) -- Changed offset based on original calls
+    API.RandomSleep2(800, 400, 600)
+    print("Preset loaded.")
+end
+
+--- Teleports using Annakarl Teleport spell.
+local function AnnakarlTP()
+    print("Casting Annakarl Teleport...")
+    API.DoAction_Ability(ABILITY_NAME.ANNAKARL_TELEPORT, 1, API.OFF_ACT_GeneralInterface_route)
+    API.RandomSleep2(1200, 1000, 1500)
+    API.WaitUntilMovingandAnimEnds()
+    print("Arrived via Annakarl Teleport.")
+end
+
+--- Teleports using Wilderness Lodestone.
+local function WildernessLode()
+    LODESTONES.Wilderness()
+    API.WaitUntilMovingandAnimEnds()
+    print("Arrived at Wilderness Lodestone.")
+end
+
+--- Teleports using Wilderness Sword to Herb Patch (option 1, then 2).
+local function WildySwordHerbPatchTP()
+    print("Teleporting via Wilderness Sword to Herb Patch...")
+    API.DoAction_Ability(ABILITY_NAME.WILDERNESS_SWORD, 2, API.OFF_ACT_GeneralInterface_route) -- Option 2 might be "Teleport"
+    API.RandomSleep2(600, 1000, 400)
+    API.KeyboardPress2(0x31, 60, 100) -- Press '1' (Forinthry Dungeon?)
+    API.RandomSleep2(400, 800, 1200)
+    API.KeyboardPress2(0x32, 60, 100) -- Press '2' (Herb Patch)
+    API.RandomSleep2(1200, 600, 400)
+    API.WaitUntilMovingandAnimEnds()
+    print("Arrived at Wilderness Herb Patch.")
+end
+
+-- =============================================================================
+-- Slayer Task Logic - Base Functions
+-- =============================================================================
+
+--- Gets the number of slayer kills remaining from Varpbit 183.
+---@return number Kills left.
+local function getSlayerKillsLeft()
+    local killCountVarp = API.VB_FindPSettinOrder(183, 0) -- Check Varp index 183
+    if killCountVarp then
+        return killCountVarp.state or 0 -- Return state (kills left) or 0 if not found
+    end
+    return 0 -- Default to 0 if Varp not found
+end
+
+--- Checks if slayer task is complete.
+---@return boolean True if 0 kills left.
+local function isTaskComplete()
+    return getSlayerKillsLeft() == 0
+end
+
+--- Generic function to attack a target NPC if not already targeting something valid.
+---@param npcId number | table The NPC ID or table of IDs to attack.
+---@param distance number The maximum distance to search for the NPC.
+---@param eliteNpcId number | table? Optional elite/variant NPC ID(s) to prioritize.
+---@return boolean True if an attack action was attempted.
+local function attackTarget(npcId, distance, eliteNpcId)
+    if not hasValidTarget() and not API.ReadPlayerMovin2() then
+        local target = nil
+        -- Prioritize elite NPC if specified and found
+        if eliteNpcId then
+            target = findNPC(eliteNpcId, distance)
+        end
+        -- If no elite found (or none specified), find regular NPC
+        if not target then
+            target = findNPC(npcId, distance)
+        end
+
+        if target then
+            print("Attacking target: " .. (target.Name or ("ID " .. target.Id)))
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {target.Id}, distance)
+            API.RandomSleep2(700, 300, 500) -- Short sleep after initiating attack
+            return true
+        end
+    end
+    return false
+end
+
+-- =============================================================================
+-- Slayer Task Logic - Specific Tasks
+-- =============================================================================
+-- Note: Each pair of (SlayerLogic, TravelLogic) functions defines a task.
+-- Task data structures will combine these later.
+
+-- ---------------------
+-- Acheron Mammoths
+-- ---------------------
+-- Function to handle the mammoth's special attack defensively
+-- This function should be called within your main Mammoth slayer loop,
+-- ideally every cycle while you have a mammoth targeted.
+local function handleMammothChargeDefensive()
+    local targetInfo = API.ReadTargetInfo(true) -- Force refresh target info
+    if targetInfo and targetInfo.id == NPC_ID.ACHERON_MAMMOTH then
+        if targetInfo.anim == NPC_ID.MAMMOTH_CHARGE_ANIM_ID then
+            print("Mammoth charging! (Anim: " .. targetInfo.anim .. ")")
+            if UTILS.isSoulSplitting() then
+                print("-> Turning Soul Split OFF")
+                API.DoAction_Ability(ABILITY_NAME.SOUL_SPLIT, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(650, 450, 800) -- Short delay
+            end
+            if not UTILS.isDeflectMelee() then
+                print("-> Turning Deflect Melee ON")
+                API.DoAction_Ability(ABILITY_NAME.DEFLECT_MELEE, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(650, 450, 800) -- Short delay
+            end
+            return true -- Indicate charge was handled (or being handled) defensively
+
+        else
+            if not UTILS.isSoulSplitting() then
+                print("-> Turning Soul Split ON (Default)")
+                API.DoAction_Ability(ABILITY_NAME.SOUL_SPLIT, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(650, 450, 800)
+            end
+        end
+    else
+        if UTILS.isDeflectMelee() then
+            print("-> Turning Deflect Melee OFF (No Mammoth target)")
+            API.DoAction_Ability(ABILITY_NAME.DEFLECT_MELEE, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(650, 450, 800)
+        end
+    end
+
+    return false -- Indicate charge is not happening or no valid target
+end
+
+local function MammothsSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.ACHERON_MAMMOTH, 50)
+
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        handleMammothChargeDefensive()
+        attackTarget(NPC_ID.ACHERON_MAMMOTH, 50)
+    else
+        handleMammothChargeDefensive()
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function MammothsTravelLogic()
+    MandrithTP()
+    local walkTarget = randomizeWaypoint(3023, 3921, 0, 5, 5)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(1200, 1000, 1500)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Onyx Dragons
+-- ---------------------
+local function OnyxDragonsSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.ONYX_DRAGON, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems() -- Placed before prayer check to loot before potential TP
+        if PrayerCheck() then
+            return true
+        end -- Check prayer, returns true if teleported
+
+        if not UTILS.isDeflectMagic() then
+            print("Turning Deflect Magic on for Onyx Dragons")
+            API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 400, 800)
+        end
+        attackTarget(NPC_ID.ONYX_DRAGON, 50)
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function OnyxDragonsTravelLogic()
+    WildernessLode()
+    local walkTarget = randomizeWaypoint(3257, 3787, 0, 5, 5)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(800, 400, 600)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Abyssal Demons (Wilderness)
+-- ---------------------
+local function AbyssDemonsSlayerLogic()
+    local targetNpc = findNPC({NPC_ID.ABYSSAL_DEMON, NPC_ID.ABYSSAL_DEMON_BIG}, 50) -- Find normal or big
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        -- No specific prayer needed? Add if necessary. Soul Split might be good.
+        attackTarget(NPC_ID.ABYSSAL_DEMON, 50, NPC_ID.ABYSSAL_DEMON_BIG) -- Prioritize big one
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function AbyssDemonsTravelLogic()
+    WildernessLode()
+    local walkTarget = randomizeWaypoint(3051, 3766, 0, 5, 5)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(800, 400, 600)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Gargoyles (Wilderness)
+-- ---------------------
+local function GargoylesSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.GARGOYLE, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        -- Prayer? Soul Split likely sufficient unless they hit hard.
+        attackTarget(NPC_ID.GARGOYLE, 50)
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function GargoylesTravelLogic()
+    WildernessLode()
+    local walkTarget = randomizeWaypoint(3225, 3731, 0, 3, 3)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(800, 400, 600)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Lava Strykewyrms
+-- ---------------------
+
+-- special attack animation ID is 491, basically if .ID == 491 then -- if dive.ready then dive else nothing...
+local function LavaWyrmSlayerLogic()
+    -- Target the mound first
+    local mound = findNPC(NPC_ID.LAVA_WYRM_MOUND, 50)
+    local wyrm = findNPC(NPC_ID.LAVA_WYRM, 50)
+
+    if handleHealth() then
+        return true
+    end
+    lootGroundItems() -- Loot regardless of state
+    if PrayerCheck() then
+        return true
+    end
+
+    if not UTILS.isDeflectMagic() then -- Assume magic deflect is generally needed
+        print("Turning Deflect Magic on for Lava Wyrms")
+        API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(600, 400, 800)
+    end
+
+    if not hasValidTarget() then
+        if not wyrm and mound then -- If no active wyrm but mound exists, interact
+            print("Interacting with Lava Wyrm mound...")
+            API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {NPC_ID.LAVA_WYRM_MOUND}, 50)
+            API.RandomSleep2(1000, 500, 800) -- Wait for wyrm to potentially spawn
+        elseif wyrm then -- If wyrm is active, attack it
+            attackTarget(NPC_ID.LAVA_WYRM, 50)
+        end
+        -- Consider adding logic for the special attack (animation 491) if needed - e.g., move away?
+        -- local interacting = API.ReadLpInteracting()
+        -- if interacting.Id == NPC_ID.LAVA_WYRM and interacting.Anim == 491 then print("Wyrm special!") end
+    end
+    return false
+end
+
+local function LavaWyrmTravelLogic()
+    WildernessLode()
+    local walkTarget = randomizeWaypoint(3039, 3812, 0, 5, 5)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(800, 400, 600)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Dark Beasts (Wilderness)
+-- ---------------------
+local lavaWyrmGateWalkPoint = randomizeWaypoint(2973, 3909, 0, 2, 2) -- Point near gate
+
+local function openWildyGateIfNeeded()
+    -- Check if the *open* gate object exists nearby. If not, try opening the *closed* one.
+    if not findObj(OBJECT_ID.WILDY_GATE_OPEN, 15) then
+        local closedGate = findObj(OBJECT_ID.WILDY_GATE_CLOSED, 15)
+        if closedGate then
+            print("Wilderness gate closed, opening...")
+            API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {OBJECT_ID.WILDY_GATE_CLOSED}, 15)
+            API.RandomSleep2(1200, 1000, 1500)
+            API.WaitUntilMovingEnds()
+            return true -- Gate was opened
+        else
+            print("Warning: Could not find closed wilderness gate to open.")
+            return false
+        end
+    end
+    return true -- Gate already open or successfully opened
+end
+
+local function DarkBeastsSlayerLogic()
+    local targetNpc = findNPC({NPC_ID.DARK_BEAST, NPC_ID.DARK_BEAST_BIG}, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+
+        if not UTILS.isSoulSplitting() then -- Soul Split is good vs melee
+            print("Turning Soul Split on for Dark Beasts")
+            API.DoAction_Ability(ABILITY_NAME.SOUL_SPLIT, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 400, 800)
+        end
+        attackTarget(NPC_ID.DARK_BEAST, 50, NPC_ID.DARK_BEAST_BIG) -- Prioritize big one
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function DarkBeastsTravelLogic()
+    MandrithTP()
+    API.DoAction_WalkerW(lavaWyrmGateWalkPoint)
+    API.RandomSleep2(200, 400, 600)
+    API.WaitUntilMovingEnds()
+
+    if openWildyGateIfNeeded() then
+        local walkTarget = randomizeWaypoint(2979, 3802, 0, 2, 2)
+        API.DoAction_WalkerW(walkTarget)
+        API.RandomSleep2(800, 400, 600)
+        API.WaitUntilMovingEnds()
+    end
+end
+
+-- ---------------------
+-- Soulgazers (Wilderness)
+-- ---------------------
+local function SoulgazersSlayerLogic()
+    local elite = findNPC(NPC_ID.SOULGAZER_ELITE, 50)
+    local normal = findNPC(NPC_ID.SOULGAZER, 50)
+
+    if elite or normal then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        if PrayerCheck() then
+            return true
+        end
+
+        if elite then -- Use Deflect Magic only for elite
+            if not UTILS.isDeflectMagic() then
+                print("Elite Soulgazer spotted, turning Deflect Magic ON")
+                API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(600, 400, 200)
+            end
+        else -- No elite found, ensure Deflect Magic is off
+            if UTILS.isDeflectMagic() then
+                print("No Elite Soulgazer, turning Deflect Magic OFF")
+                API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(600, 400, 200)
+            end
+            -- Consider using Soul Split for normal ones if needed
+            -- if not UTILS.isSoulSplitting() then ... end
+        end
+
+        attackTarget(NPC_ID.SOULGAZER, 50, NPC_ID.SOULGAZER_ELITE) -- Prioritize elite
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function SoulgazersTravelLogic()
+    WildernessLode()
+    local walkTarget = randomizeWaypoint(3306, 3729, 0, 5, 5)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(800, 500, 300)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Revenants
+-- ---------------------
+-- Table of all Revenant IDs for easier searching
+local ALL_REVENANT_IDS = {NPC_ID.REVENANT_DRAGON, NPC_ID.REVENANT_KNIGHT, NPC_ID.REVENANT_DARK_BEAST,
+                          NPC_ID.REVENANT_ORK, NPC_ID.REVENANT_DEMON, NPC_ID.REVENANT_HELLHOUND,
+                          NPC_ID.REVENANT_CYCLOPS, NPC_ID.REVENANT_WEREWOLF, NPC_ID.REVENANT_VAMPYRE,
+                          NPC_ID.REVENANT_HOBGOBLIN, NPC_ID.REVENANT_PYREFIEND, NPC_ID.REVENANT_ICEFIEND}
+
+local function RevenantsSlayerLogic()
+    -- Use GetAllObjArrayInteract to find *any* revenant nearby, then attack the first one.
+    local revs = API.GetAllObjArrayInteract(ALL_REVENANT_IDS, 50, {1})
+
+    if #revs > 0 then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        if PrayerCheck() then
+            return true
+        end
+
+        if not hasValidTarget() and not API.CheckAnim(5) and not API.ReadPlayerMovin2() then
+            local targetRev = revs[1] -- Attack the first one in the list (usually closest)
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {targetRev.Id}, 50)
+            API.RandomSleep2(800, 400, 600)
+        end
+    else
+        API.RandomSleep2(500, 200, 300)
+        -- Maybe wander slightly if no revs found in the cave?
+    end
+    return false
+end
+
+local function RevenantsTravelLogic()
+    WildernessLode()
+    local walkToCaveEntrance = randomizeWaypoint(3082, 3650, 0, 3, 3)
+    API.DoAction_WalkerW(walkToCaveEntrance)
+    API.RandomSleep2(1000, 600, 800)
+    API.WaitUntilMovingEnds()
+
+    -- Enter cave
+    API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {OBJECT_ID.REV_CAVE_ENTRANCE}, 15) -- Reduced distance
+    API.RandomSleep2(1200, 800, 500)
+    API.WaitUntilMovingEnds()
+    API.RandomSleep2(600, 1000, 1500) -- Wait after entering
+
+    -- Check if inside (look for a known NPC inside, e.g., Forlorn Shade)
+    if findNPC(NPC_ID.FORLORN_SHADE, 50) then
+        print("Entered Revenant Caves.")
+        local walkInsideCave = randomizeWaypoint(3115, 10146, 0, 5, 5) -- Coordinates seem to be in cave map region
+        API.DoAction_WalkerW(walkInsideCave)
+        API.RandomSleep2(1200, 800, 500)
+        API.WaitUntilMovingEnds()
+    else
+        print("Failed to enter Revenant Caves, trying again...")
+        -- Optional: add retry logic or stop
+    end
+end
+
+-- ---------------------
+-- Living Wyverns
+-- ---------------------
+local function WyvernSlayerLogic()
+    local targetNpc = findNPC({NPC_ID.LIVING_WYVERN, NPC_ID.LIVING_WYVERN_BIG}, 9) -- Short range from safespot
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        ensureWyvernSafespot() -- Stay in the spot
+
+        if not UTILS.isSoulSplitting() then -- Need sustain
+            print("Turning Soul Split on for Wyverns")
+            API.DoAction_Ability(ABILITY_NAME.SOUL_SPLIT, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 400, 200)
+        end
+
+        attackTarget(NPC_ID.LIVING_WYVERN, 9, NPC_ID.LIVING_WYVERN_BIG) -- Attack within short range
+
+        -- Wyrmfire potion check (Uncomment if needed and potion name is correct)
+        -- local antifireBuff = API.Buffbar_GetIDstatus(14692, false) -- Check buff ID 14692
+        -- if not antifireBuff or antifireBuff.id == 0 then
+        --    print("Wyrmfire protection missing, drinking potion.")
+        --    API.DoAction_Ability(ABILITY_NAME.WYRMFIRE_POTION, 1, API.OFF_ACT_GeneralInterface_route)
+        --    API.RandomSleep2(600, 200, 400)
+        -- end
+    else
+        ensureWyvernSafespot() -- Stay in spot even if no target
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function WyvernTravelLogic()
+    MandrithTP()
+    API.DoAction_WalkerW(lavaWyrmGateWalkPoint) -- Walk towards gate
+    API.RandomSleep2(200, 400, 600)
+    API.WaitUntilMovingEnds()
+
+    if openWildyGateIfNeeded() then
+        wyvernComboMovement() -- Execute the Surge/Dive combo
+    end
+end
+
+-- ---------------------
+-- Kal'gerion Demons
+-- ---------------------
+local kalgerionAreaCenter = WPOINT.new(3290, 3875, 0)
+local kalgerionAreaRadius = 10
+
+local function KalgerionSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.KALGERION_DEMON, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        if PrayerCheck() then
+            return true
+        end -- Kalgs hit hard
+
+        -- Ensure inside fighting area
+        if not API.PInAreaW(kalgerionAreaCenter, kalgerionAreaRadius) then
+            print("Outside Kal'gerion area, moving back.")
+            local walkTarget = randomizeWaypoint(kalgerionAreaCenter.x, kalgerionAreaCenter.y, 0, 2, 2)
+            API.DoAction_WalkerW(walkTarget)
+            API.RandomSleep2(400, 200, 300)
+            API.WaitUntilMovingEnds(4, 4)
+            return false -- Skip attacking this cycle
+        end
+
+        if not UTILS.isDeflectMelee() then
+            print("Turning Deflect Melee on for Kal'gerion Demons")
+            API.DoAction_Ability(ABILITY_NAME.DEFLECT_MELEE, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 400, 200)
+        end
+
+        attackTarget(NPC_ID.KALGERION_DEMON, 50)
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function KalgerionTravelLogic()
+    AnnakarlTP()
+    -- No walking needed, Annakarl TP lands right there. Add short settle sleep.
+    API.RandomSleep2(1000, 500, 800)
+end
+
+-- ---------------------
+-- Ice Strykewyrms
+-- ---------------------
+local function IceWyrmSlayerLogic()
+    local mound = findNPC(NPC_ID.ICE_WYRM_MOUND, 50)
+    local wyrm = findNPC(NPC_ID.ICE_WYRM, 50)
+
+    if handleHealth() then
+        return true
+    end
+    lootGroundItems()
+    if PrayerCheck() then
+        return true
+    end -- They can hit hard
+
+    if not UTILS.isDeflectMagic() then -- Assume magic deflect is generally needed
+        print("Turning Deflect Magic on for Ice Wyrms")
+        API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(600, 400, 200)
+    end
+
+    if not hasValidTarget() then
+        if not wyrm and mound then
+            print("Interacting with Ice Wyrm mound...")
+            API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {NPC_ID.ICE_WYRM_MOUND}, 50)
+            API.RandomSleep2(1000, 500, 800)
+        elseif wyrm then
+            attackTarget(NPC_ID.ICE_WYRM, 50)
+        end
+    end
+    return false
+end
+
+local function IceWyrmTravelLogic()
+    MandrithTP()
+    API.DoAction_WalkerW(lavaWyrmGateWalkPoint)
+    API.RandomSleep2(200, 400, 600)
+    API.WaitUntilMovingEnds()
+
+    if openWildyGateIfNeeded() then
+        local walkTarget = randomizeWaypoint(3061, 3816, 0, 5, 5)
+        API.DoAction_WalkerW(walkTarget)
+        API.RandomSleep2(800, 400, 600)
+        API.WaitUntilMovingEnds()
+    end
+end
+
+-- ---------------------
+-- Hydrix Dragons
+-- ---------------------
+local hydrixAreaCenter = WPOINT.new(3043, 3892, 0)
+local hydrixAreaRadius = 10
+
+local function HydrixDragonSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.HYDRIX_DRAGON, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        if PrayerCheck() then
+            return true
+        end
+
+        -- Ensure inside fighting area
+        if not API.PInAreaW(hydrixAreaCenter, hydrixAreaRadius) then
+            print("Outside Hydrix Dragon area, moving back.")
+            local walkTarget = randomizeWaypoint(hydrixAreaCenter.x, hydrixAreaCenter.y, 0, 2, 2)
+            API.DoAction_WalkerW(walkTarget)
+            API.RandomSleep2(600, 400, 800)
+            API.WaitUntilMovingEnds(4, 4)
+            return false -- Skip attacking this cycle
+        end
+
+        if not UTILS.isDeflectMagic() then
+            print("Turning Deflect Magic on for Hydrix Dragons")
+            API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 100, 200)
+        end
+
+        attackTarget(NPC_ID.HYDRIX_DRAGON, 50)
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function HydrixDragonTravelLogic()
+    MandrithTP()
+    API.DoAction_WalkerW(lavaWyrmGateWalkPoint)
+    API.RandomSleep2(200, 400, 600)
+    API.WaitUntilMovingEnds()
+
+    if openWildyGateIfNeeded() then
+        local walkTarget = randomizeWaypoint(3028, 3890, 0, 2, 2) -- Walk near area
+        API.DoAction_WalkerW(walkTarget)
+        API.RandomSleep2(1000, 500, 800)
+        API.WaitUntilMovingandAnimEnds(10, 8)
+    end
+end
+
+-- ---------------------
+-- Greater Demon Berserkers / Ash Lords
+-- ---------------------
+local function GreaterDemonsSlayerLogic()
+    local targetNpc = findNPC({NPC_ID.GREATER_DEMON_BERSERKER, NPC_ID.GREATER_DEMON_ASH_LORD}, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        ensureGreaterDemonSafespot() -- Stay in the safespot area
+
+        -- No prayer needed if safespotting correctly. Add Deflect Magic if Ash Lords use magic?
+        attackTarget(NPC_ID.GREATER_DEMON_BERSERKER, 50, NPC_ID.GREATER_DEMON_ASH_LORD) -- Attack from safespot
+    else
+        ensureGreaterDemonSafespot() -- Stay in spot even if no target
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function GreaterDemonsTravelLogic()
+    AnnakarlTP()
+    local walkTarget = randomizeWaypoint(greaterDemonSafespot.x, greaterDemonSafespot.y, 0, 1, 1) -- Walk to safespot center
+    API.RandomSleep2(500, 500, 500) -- Short wait after TP
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(1000, 800, 600)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Abyssal Beasts (Wilderness)
+-- ---------------------
+local function AbyssalBeastsSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.ABYSSAL_BEAST, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        -- Prayer? Soul Split likely good.
+        if not UTILS.isSoulSplitting() then
+            print("Turning Soul Split on for Abyssal Beasts")
+            API.DoAction_Ability(ABILITY_NAME.SOUL_SPLIT, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 100, 200)
+        end
+        attackTarget(NPC_ID.ABYSSAL_BEAST, 25) -- Original used shorter range
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function AbyssalBeastsTravelLogic()
+    WildySwordHerbPatchTP()
+    -- No extra walking needed, TP is close. Add settle time.
+    API.RandomSleep2(1000, 500, 800)
+end
+
+-- ---------------------
+-- Glacors (Wilderness)
+-- ---------------------
+local GLACOR_IDS = {NPC_ID.GLACOR, NPC_ID.GLACITE_ENDURING, NPC_ID.GLACITE_SAIGN, NPC_ID.GLACITE_UNSTABLE}
+
+local function GlacorsSlayerLogic()
+    -- Target any Glacor or Glacite nearby
+    local targets = API.GetAllObjArrayInteract(GLACOR_IDS, 15, {1}) -- Search in close range
+
+    if #targets > 0 then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        if PrayerCheck() then
+            return true
+        end -- Glacors can hit
+
+        -- Prayer? Deflect Magic is generally useful, Soul Split maybe if tanking Enduring.
+        if not UTILS.isDeflectMagic() then
+            print("Turning Deflect Magic on for Glacors")
+            API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 100, 200)
+        end
+
+        if not hasValidTarget() then
+            local targetGlacor = targets[1] -- Attack closest
+            print("Attacking Glacor/Glacite: " .. (targetGlacor.Name or ("ID " .. targetGlacor.Id)))
+            API.DoAction_NPC(0x2a, API.OFF_ACT_AttackNPC_route, {targetGlacor.Id}, 15)
+            API.RandomSleep2(800, 400, 600)
+        end
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function GlacorsTravelLogic()
+    MandrithTP()
+    API.DoAction_WalkerW(lavaWyrmGateWalkPoint)
+    API.RandomSleep2(200, 400, 600)
+    API.WaitUntilMovingEnds()
+
+    if openWildyGateIfNeeded() then
+        local walkTarget = randomizeWaypoint(2974, 3905, 0, 5, 5)
+        API.DoAction_WalkerW(walkTarget)
+        API.RandomSleep2(800, 400, 600)
+        API.WaitUntilMovingandAnimEnds(10, 8)
+    end
+end
+
+-- ---------------------
+-- Black Demons (Wilderness)
+-- ---------------------
+local function BlackDemonsSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.BLACK_DEMON, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        -- Prayer? Deflect Melee or Soul Split.
+        if not UTILS.isDeflectMelee() then
+            print("Turning Deflect Melee on for Black Demons")
+            API.DoAction_Ability(ABILITY_NAME.DEFLECT_MELEE, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 100, 200)
+        end
+        attackTarget(NPC_ID.BLACK_DEMON, 50)
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function BlackDemonsTravelLogic()
+    WildernessLode()
+    local walkTarget = randomizeWaypoint(3300, 3798, 0, 5, 5)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(800, 400, 600)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Abyssal Savages (Wilderness)
+-- ---------------------
+local function AbyssalSavagesSlayerLogic()
+    local targetNpc = findNPC(NPC_ID.ABYSSAL_SAVAGE, 50)
+    if targetNpc then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        -- Prayer? Soul Split likely good.
+        if not UTILS.isSoulSplitting() then
+            print("Turning Soul Split on for Abyssal Savages")
+            API.DoAction_Ability(ABILITY_NAME.SOUL_SPLIT, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 100, 200)
+        end
+        attackTarget(NPC_ID.ABYSSAL_SAVAGE, 50)
+    else
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function AbyssalSavagesTravelLogic()
+    WildernessLode()
+    local walkTarget = randomizeWaypoint(3050, 3723, 0, 5, 5)
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(700, 500, 300)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Abyssal Lords (Wilderness)
+-- ---------------------
+local function AbyssalLordsSlayerLogic()
+    local lord = findNPC(NPC_ID.ABYSSAL_LORD, 10) -- Search close range from spot
+    local tentacle = findNPC(NPC_ID.ABYSSAL_LORD_TENTACLE, 10)
+
+    if lord or tentacle then
+        if handleHealth() then
+            return true
+        end
+        lootGroundItems()
+        ensureAbyssalLordSafespot() -- Stay in spot
+        if PrayerCheck() then
+            return true
+        end -- Lords hit hard
+
+        -- Tentacles are priority, use Deflect Magic when fighting lord
+        if hasValidTarget() then
+            local currentTarget = API.ReadLpInteracting()
+            if currentTarget.Id == NPC_ID.ABYSSAL_LORD then
+                if not UTILS.isDeflectMagic() then
+                    print("Targeting Lord, turning Deflect Magic ON")
+                    API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+                    API.RandomSleep2(600, 100, 150)
+                end
+            else -- Targeting tentacle or something else
+                if UTILS.isDeflectMagic() then
+                    print("Not targeting Lord, turning Deflect Magic OFF")
+                    API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+                    API.RandomSleep2(200, 100, 150)
+                end
+            end
+        else -- No target, turn magic deflect off just in case
+            if UTILS.isDeflectMagic() then
+                print("No target, turning Deflect Magic OFF")
+                API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(600, 100, 150)
+            end
+            -- Attack tentacle first if available, otherwise attack lord
+            attackTarget(NPC_ID.ABYSSAL_LORD, 10, NPC_ID.ABYSSAL_LORD_TENTACLE)
+        end
+    else
+        ensureAbyssalLordSafespot() -- Stay in spot even if no target
+        -- Turn off deflect magic if nothing is around
+        if UTILS.isDeflectMagic() then
+            print("No targets nearby, turning Deflect Magic OFF")
+            API.DoAction_Ability(ABILITY_NAME.DEFLECT_MAGIC, 1, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(600, 100, 150)
+        end
+        API.RandomSleep2(500, 200, 300)
+    end
+    return false
+end
+
+local function AbyssalLordsTravelLogic()
+    WildySwordHerbPatchTP()
+    local walkTarget = randomizeWaypoint(abyssalLordSafespot.x, abyssalLordSafespot.y, 0, 1, 1) -- Walk exactly to spot
+    API.DoAction_WalkerW(walkTarget)
+    API.RandomSleep2(700, 500, 800)
+    API.WaitUntilMovingEnds()
+end
+
+-- ---------------------
+-- Ripper Demons (Wilderness) - Cancel Task Logic
+-- ---------------------
+local function RipperDemonsCancelLogic() -- This isn't slayer logic, it's task cancellation
+    print("Ripper Demon task detected. Cancelling task...")
+    if not findNPC(NPC_ID.MANDRITH, 15) then
+        MandrithTP()
+        API.WaitUntilMovingandAnimEnds(6, 6) -- Wait after TPing
+    end
+
+    if findNPC(NPC_ID.MANDRITH, 15) then
+        -- Interact (Route 4 seems specific, maybe "Rewards" or "Cancel"?)
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route4, {NPC_ID.MANDRITH}, 15)
+        API.RandomSleep2(800, 600, 800)
+        API.WaitUntilMovingandAnimEnds(5, 5)
+        API.RandomSleep2(1000, 500, 700) -- Wait for interface
+
+        -- Interface actions based on original script (Verify these interface IDs/components)
+        -- 1. Click Assignment Tab? (Interface 1308, Component 18)
+        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 18, -1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(1500, 1000, 800)
+
+        -- 2. Click Cancel Task Button? (Interface 1308, Component 551)
+        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 551, -1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(1500, 600, 1000)
+
+        -- 3. Close Interface? (Interface 1308, Component 896 - Seems like an 'X' button)
+        -- The offset 3808 is unusual, check if OFF_ACT_GeneralInterface_route works
+        API.DoAction_Interface(0x24, 0xffffffff, 1, 1308, 896, -1, API.OFF_ACT_GeneralInterface_route) -- Trying standard route
+        API.RandomSleep2(800, 600, 800)
+        print("Task cancellation attempt complete.")
+        -- Force kill count to 0 after cancelling to trigger getting a new task
+        -- This requires modifying how task completion is checked or handled.
+        -- For now, just returning true signals it handled the "task".
+        return true
+    else
+        print("Could not find Mandrith to cancel task.")
+        return false -- Failed to handle
+    end
+end
+
+local function RipperDemonsTravelLogic()
+    -- No travel needed as the logic is to cancel at Mandrith
+    print("Ripper Demon task - no travel required, cancelling.")
+end
+
+-- =============================================================================
+-- Task Management & Main Loop Setup
+-- =============================================================================
+
+-- Stores data for each task
+-- Structure: { npcId, checkPoint, areaRadius, preset, travelFunc, slayerFunc, taskNamePattern }
+local taskDataStore = {
+    ["Mammoths"] = {
+        npcId = NPC_ID.ACHERON_MAMMOTH,
+        checkPoint = WPOINT.new(3023, 3921, 0),
+        areaRadius = 25,
+        preset = PRESET.NECRO_BONEPRAYER,
+        travelFunc = MammothsTravelLogic,
+        slayerFunc = MammothsSlayerLogic,
+        taskNamePattern = "Acheron mammoths (Wilderness)"
+    },
+    ["Onyx Dragons"] = {
+        npcId = NPC_ID.ONYX_DRAGON,
+        checkPoint = WPOINT.new(3257, 3787, 0),
+        areaRadius = 25,
+        preset = PRESET.NECRO_BONEPRAYER,
+        travelFunc = OnyxDragonsTravelLogic,
+        slayerFunc = OnyxDragonsSlayerLogic,
+        taskNamePattern = "Onyx dragons (Wilderness)"
+    },
+    ["Abyssal Demons"] = {
+        npcId = NPC_ID.ABYSSAL_DEMON,
+        eliteNpcId = NPC_ID.ABYSSAL_DEMON_BIG,
+        checkPoint = WPOINT.new(3051, 3766, 0),
+        areaRadius = 25,
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = AbyssDemonsTravelLogic,
+        slayerFunc = AbyssDemonsSlayerLogic,
+        taskNamePattern = "Abyssal demons (Wilderness)" -- Matches "Abyssal Demons (Wilderness)"
+    },
+    ["Gargoyles"] = {
+        npcId = NPC_ID.GARGOYLE,
+        checkPoint = WPOINT.new(3225, 3731, 0),
+        areaRadius = 50, -- Original used 50
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = GargoylesTravelLogic,
+        slayerFunc = GargoylesSlayerLogic,
+        taskNamePattern = "Gargoyles (Wilderness)"
+    },
+    ["Lava Wyrms"] = {
+        npcId = NPC_ID.LAVA_WYRM,
+        moundId = NPC_ID.LAVA_WYRM_MOUND,
+        checkPoint = WPOINT.new(3039, 3812, 0),
+        areaRadius = 50, -- Original used 50
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = LavaWyrmTravelLogic,
+        slayerFunc = LavaWyrmSlayerLogic,
+        taskNamePattern = "Lava strykewyrms (Wilderness)"
+    },
+    ["Dark Beasts"] = {
+        npcId = NPC_ID.DARK_BEAST,
+        eliteNpcId = NPC_ID.DARK_BEAST_BIG,
+        checkPoint = WPOINT.new(2979, 3802, 0),
+        areaRadius = 25,
+        preset = PRESET.NECRO_BONEPRAYER,
+        travelFunc = DarkBeastsTravelLogic,
+        slayerFunc = DarkBeastsSlayerLogic,
+        taskNamePattern = "Dark beasts (Wilderness)"
+    },
+    ["Soulgazers"] = {
+        npcId = NPC_ID.SOULGAZER,
+        eliteNpcId = NPC_ID.SOULGAZER_ELITE,
+        checkPoint = WPOINT.new(3306, 3729, 0),
+        areaRadius = 50, -- Original used 50
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = SoulgazersTravelLogic,
+        slayerFunc = SoulgazersSlayerLogic,
+        taskNamePattern = "Soulgazers (Wilderness)"
+    },
+    ["Revenants"] = {
+        npcId = ALL_REVENANT_IDS, -- Use the table of IDs
+        checkPoint = WPOINT.new(3115, 10146, 0),
+        areaRadius = 55, -- Original used 55
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = RevenantsTravelLogic,
+        slayerFunc = RevenantsSlayerLogic,
+        taskNamePattern = "Revenants (Wilderness)" -- Matches "Revenants (Wilderness)" or "revenant ghosts"
+    },
+    ["Living Wyverns"] = {
+        npcId = NPC_ID.LIVING_WYVERN,
+        eliteNpcId = NPC_ID.LIVING_WYVERN_BIG,
+        checkPoint = WPOINT.new(2970, 3896, 0),
+        areaRadius = 20,
+        preset = PRESET.NECRO_BONEPRAYER,
+        travelFunc = WyvernTravelLogic,
+        slayerFunc = WyvernSlayerLogic,
+        taskNamePattern = "Living wyverns (Wilderness)"
+    },
+    ["Kalgerion Demons"] = {
+        npcId = NPC_ID.KALGERION_DEMON,
+        checkPoint = WPOINT.new(3288, 3874, 0),
+        areaRadius = 50, -- Original used 50
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = KalgerionTravelLogic,
+        slayerFunc = KalgerionSlayerLogic,
+        taskNamePattern = "Kal'gerion demons (Wilderness)"
+    },
+    ["Ice Wyrms"] = {
+        npcId = NPC_ID.ICE_WYRM,
+        moundId = NPC_ID.ICE_WYRM_MOUND,
+        checkPoint = WPOINT.new(3061, 3816, 0),
+        areaRadius = 25,
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = IceWyrmTravelLogic,
+        slayerFunc = IceWyrmSlayerLogic,
+        taskNamePattern = "Ice strykewyrms (Wilderness)"
+    },
+    ["Hydrix Dragons"] = {
+        npcId = NPC_ID.HYDRIX_DRAGON,
+        checkPoint = WPOINT.new(3028, 3890, 0),
+        areaRadius = 25,
+        preset = PRESET.NECRO_BONEPRAYER,
+        travelFunc = HydrixDragonTravelLogic,
+        slayerFunc = HydrixDragonSlayerLogic,
+        taskNamePattern = "Hydrix dragons (Wilderness)"
+    },
+    ["Greater Demons"] = {
+        npcId = NPC_ID.GREATER_DEMON_BERSERKER,
+        eliteNpcId = NPC_ID.GREATER_DEMON_ASH_LORD,
+        checkPoint = WPOINT.new(3346, 3881, 0),
+        areaRadius = 25, -- Check radius needs verification for safespot
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = GreaterDemonsTravelLogic,
+        slayerFunc = GreaterDemonsSlayerLogic,
+        taskNamePattern = "Greater demon berserkers and ash lords (Wilderness)" -- Matches both variations
+    },
+    ["Abyssal Beasts"] = {
+        npcId = NPC_ID.ABYSSAL_BEAST,
+        checkPoint = WPOINT.new(3117, 3813, 0),
+        areaRadius = 50, -- Original used 50
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = AbyssalBeastsTravelLogic,
+        slayerFunc = AbyssalBeastsSlayerLogic,
+        taskNamePattern = "Abyssal beasts (Wilderness)"
+    },
+    ["Glacors"] = {
+        npcId = GLACOR_IDS,
+        checkPoint = WPOINT.new(2974, 3905, 0),
+        areaRadius = 35,
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = GlacorsTravelLogic,
+        slayerFunc = GlacorsSlayerLogic,
+        taskNamePattern = "Glacors (Wilderness)"
+    },
+    ["Black Demons"] = {
+        npcId = NPC_ID.BLACK_DEMON,
+        checkPoint = WPOINT.new(3300, 3798, 0),
+        areaRadius = 50, -- Original used 50
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = BlackDemonsTravelLogic,
+        slayerFunc = BlackDemonsSlayerLogic,
+        taskNamePattern = "Black demons (Wilderness)"
+    },
+    ["Abyssal Savages"] = {
+        npcId = NPC_ID.ABYSSAL_SAVAGE,
+        checkPoint = WPOINT.new(3050, 3723, 0),
+        areaRadius = 50, -- Original used 50
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = AbyssalSavagesTravelLogic,
+        slayerFunc = AbyssalSavagesSlayerLogic,
+        taskNamePattern = "Abyssal savages (Wilderness)"
+    },
+    ["Abyssal Lords"] = {
+        npcId = NPC_ID.ABYSSAL_LORD,
+        eliteNpcId = NPC_ID.ABYSSAL_LORD_TENTACLE,
+        checkPoint = WPOINT.new(3173, 3884, 0),
+        areaRadius = 50, -- Original used 50, check radius likely smaller for safespot
+        preset = PRESET.NECRO_BLOOD,
+        travelFunc = AbyssalLordsTravelLogic,
+        slayerFunc = AbyssalLordsSlayerLogic,
+        taskNamePattern = "Abyssal lords (Wilderness)"
+    },
+    ["Ripper Demons"] = {
+        -- No NPC ID needed as we cancel
+        checkPoint = WPOINT.new(0, 0, 0),
+        areaRadius = 0, -- Dummy values
+        preset = PRESET.NECRO_BLOOD, -- Default preset
+        travelFunc = RipperDemonsTravelLogic,
+        slayerFunc = RipperDemonsCancelLogic,
+        taskNamePattern = "Ripper demons (Wilderness)"
+    }
+}
+
+--- Reads the current slayer task from the interface (adjust component IDs if needed).
+---@return string | nil The task name string or nil if not found.
+local function getCurrentSlayerTaskName()
+    local SlayerInterface = API.ScanForInterfaceTest2Get(false, {{1639, 3, -1, -1, 0}, {1639, 5, -1, 3, 0},
+                                                                 {1639, 8, -1, 5, 0}, {1639, 11, -1, 8, 0}})
+    local slayerTask = SlayerInterface[1].textids
+
+    if slayerTask and #slayerTask > 0 then
+        local taskText = slayerTask
+        print("Detected task string: " .. taskText)
+        return taskText
+    else
+        print("Could not read slayer task name from interface.")
+        return nil
+    end
+end
+
+--- Matches the detected task name string against the patterns in taskDataStore.
+---@param detectedName string The name read from the game.
+---@return table | nil The matching task data table or nil.
+local function findTaskData(detectedName)
+    if not detectedName then
+        return nil
+    end
+
+    local lowerDetectedName = detectedName
+
+    for taskKey, taskInfo in pairs(taskDataStore) do
+        if string.find(lowerDetectedName, taskInfo.taskNamePattern, 1, true) then -- Plain find
+            print("Matched task: " .. taskKey)
+            return taskInfo
+        end
+    end
+
+    print("Warning: No matching task found for '" .. detectedName .. "'")
+    return nil
+end
+
+--- Gets a new task from Mandrith, attempting to pick a preferred one.
+---@return string | nil The name of the new task assigned, or nil if failed.
+local function getNewTask()
+    print("Getting new slayer task...")
+    if not findNPC(NPC_ID.MANDRITH, 15) then
+        if not findNPC(NPC_ID.MAX_GUILD_BANKER, 15) then
+            GuildTP() -- Go to guild if not near banker or mandrith
+        end
+        MandrithTP() -- Teleport to Mandrith
+    end
+
+    if findNPC(NPC_ID.MANDRITH, 15) then
+        MandrithTalk() -- Talk to get task options
+
+        -- Task Picking Logic (simplified - selects first available from this ordered list)
+        -- Add more preferred tasks to the top if desired
+        local preferredTaskOptions = {"abyssal lords", "greater demon berserkers", "hydrix dragons", "acheron mammoths",
+                                      "soulgazers", "lava strykewyrms", "onyx dragons", "abyssal beasts",
+                                      "kal'gerion demons", "ice strykewyrms", "abyssal savages", "abyssal demons",
+                                      "black demons", "revenants", "living wyverns", "dark beasts", "gargoyles",
+                                      "glacors", "ripper demons"}
+
+        local taskAssigned = false
+        for _, optionText in ipairs(preferredTaskOptions) do
+            if API.Select_Option(optionText) then -- Select_Option uses fuzzy matching
+                print("Selected task option: " .. optionText)
+                taskAssigned = true
+                API.RandomSleep2(1200, 800, 600) -- Wait after selecting
+                break -- Stop after selecting one
+            end
+        end
+
+        if not taskAssigned then
+            print("Could not select any preferred task option.")
+            -- Optional: Add logic to just take whatever task is offered or close dialog
+            return nil
+        end
+
+        -- After selecting, re-read the task name to confirm
+        API.RandomSleep2(1000, 500, 500) -- Wait for task assignment update
+        local newTaskName = getCurrentSlayerTaskName()
+        if newTaskName then
+            print("New task assigned: " .. newTaskName)
+            return newTaskName
+        else
+            print("Failed to read new task name after selection.")
+            return nil -- Indicate failure
+        end
+
+    else
+        print("Failed to find Mandrith to get a new task.")
+        return nil -- Indicate failure
+    end
+end
+
+-- State variable to hold the current task data
+local currentTaskData = nil
+
+-- =============================================================================
+-- Main Loop
+-- =============================================================================
+API.SetDrawTrackedSkills(true) -- Enable skill tracker overlay
+print("Starting main loop...")
+
+while API.Read_LoopyLoop() do
+    API.SetMaxIdleTime(5)
+
+    -- 1. Check Task Status
+    if isTaskComplete() then
+        print("Slayer task complete or no task active.")
+        PrayerOff() -- Turn off prayers between tasks
+        local assignedTaskName = getNewTask() -- Get a new task from Mandrith
+
+        if assignedTaskName then
+            currentTaskData = findTaskData(assignedTaskName)
+            if not currentTaskData then
+                print("Failed to match assigned task '" .. assignedTaskName .. "' to known tasks. Stopping.")
+                API.Write_LoopyLoop(false) -- Stop script
+            end
+        else
+            print("Failed to get a new task. Stopping.")
+            API.Write_LoopyLoop(false) -- Stop script
+        end
+        API.RandomSleep2(1000, 500, 500) -- Pause after getting task before starting
+
+    elseif currentTaskData == nil then
+        -- Task not complete, but we don't know what it is. Try to read it.
+        print("No current task data, attempting to read task...")
+        local taskName = getCurrentSlayerTaskName()
+        if taskName then
+            currentTaskData = findTaskData(taskName)
+            if not currentTaskData then
+                print("Found task name '" .. taskName .. "' but could not match it. Getting new task...")
+                currentTaskData = nil
+            end
+        else
+            print("Could not determine current task. Trying Mandrith...")
+            currentTaskData = nil
+        end
+        API.RandomSleep2(1000, 500, 500)
+
+    else
+
+        -- Check if player is at the task location
+        if API.PInAreaW(currentTaskData.checkPoint, currentTaskData.areaRadius) then
+            -- At location, perform slayer actions
+            local teleported = currentTaskData.slayerFunc()
+            if teleported then
+                print("Teleported out during slayer logic. Resetting state for next loop.")
+                currentTaskData = nil
+                API.RandomSleep2(1500, 1000, 1000)
+            end
+        else
+            -- Not at location, need to travel
+            print("Not at task location. Travelling...")
+            PrayerOff() -- Ensure prayers are off before banking/travelling
+
+            if not findNPC(NPC_ID.MAX_GUILD_BANKER, 15) then
+                GuildTP() -- Go to bank if not already there
+            end
+
+            -- Perform banking and preset loading
+            if Bank() then -- Bank() returns true on success
+                if API.BankOpen2() then
+                    loadPreset(currentTaskData.preset)
+                else
+                    print("Bank did not open after attempt. Cannot load preset.")
+                    API.Write_LoopyLoop(false)
+                    break -- Exit loop
+                end
+
+                -- Execute travel logic
+                currentTaskData.travelFunc()
+                print("Travel attempt complete.")
+
+            else
+                print("Banking failed. Stopping script.")
+                API.Write_LoopyLoop(false) -- Stop script
+            end
+        end
+    end
+
+    API.RandomSleep2(100, 100, 200) -- Short delay at the end of each loop iteration
+end
+
+PrayerOff() -- Turn off prayers when script ends
+print("Bobi's Slayer script finished.")
+
+--[[
+ BUGS / TODO from original:
+1. spams "Your current task is: ": Hopefully fixed by restructuring the main loop and task checking.
+2. --fix worm special attack animation: Not implemented, low priority. Can add animation check in LavaWyrmSlayerLogic if needed.
+3. Onyx dragons doesn't pick items up sometimes: Looting logic is now more generic (`lootGroundItems`). Ensure `DEFAULT_LOOT_DISTANCE` is sufficient. Maybe add extra wait after kill?
+4. combo() too slow: `wyvernComboMovement` timings adjusted slightly, further tuning might be needed based on observation. Reduced some waits.
+5. GreaterDemonBerserkersSlayer() safespot buggy: Replaced with `ensureGreaterDemonSafespot` logic which checks area and moves back to center if needed. May require tuning `greaterDemonSafespotRadius`.
+6. Acheron Mammoths special attack melts: Not explicitly handled. Could add logic to `MammothsSlayerLogic` to detect special (if possible via animation/projectile) and react (e.g., Deflect Melee, move away).
+7. Died on wyverns, deathcheck doesn't work: Death check removed as requested. `handleHealth` function added with critical HP teleport. Need robust `GuildTP` and potentially better food/prayer handling for Wyverns. Ensure `wyvernComboMovement` gets to `safeWyvernSpot` reliably.
+--]]
