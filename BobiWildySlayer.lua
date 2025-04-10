@@ -426,7 +426,7 @@ local function MammothsTask()
     --
     if API.PInAreaW(MammothCheck, 25) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             MammothsSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -470,7 +470,7 @@ local function OnyxDragonsTask()
     --
     if API.PInAreaW(OnyxCheck, 25) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             OnyxSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -516,7 +516,7 @@ local function AbyssDemonTask()
     --
     if API.PInAreaW(AbyssDemonsCheck, 25) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             AbyssDemonSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -557,7 +557,7 @@ local function GargoylesTask()
     --
     if API.PInAreaW(GargoyleCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             GargoylesSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -600,7 +600,7 @@ end
 local function LavaWormTask()
     if API.PInAreaW(LavaWormCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             LavaWormSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -650,7 +650,7 @@ local function DarkBeastTask()
     --
     if API.PInAreaW(DarkBeastCheck, 25) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             DarkBeastSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -712,7 +712,7 @@ local function SoulGazersTask()
     --
     if API.PInAreaW(SoulGazersCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             SoulGazersSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -786,7 +786,7 @@ local function RevenantsTask()
     --
     if API.PInAreaW(RevenantsCheck, 55) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             RevenantsSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -862,7 +862,7 @@ local function WyvernTask() -- check if it works properly
     --
     if API.PInAreaW(WyvernCheck, 20) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             WyvernSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -923,7 +923,7 @@ local function KalgerionTask()
     --
     if API.PInAreaW(KalgerionCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             KalgerionSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -963,7 +963,7 @@ local function IceWyrmTask()
     --
     if API.PInAreaW(IceWyrmCheck, 25) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             IceWyrmSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1029,7 +1029,7 @@ local function HydrixDragonsTask()
     --
     if API.PInAreaW(HydrixDragonCheck, 25) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             HydrixSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1098,7 +1098,7 @@ local function GreaterDemonBerserkersTask()
     --
     if API.PInAreaW(GreaterDemonBerserkerCheck, 25) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             GreaterDemonBerserkersSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1146,7 +1146,7 @@ local function AbyssBeastsTask()
     --
     if API.PInAreaW(AbyssBeastCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             AbyssBeastsSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1192,7 +1192,7 @@ local function GlacorsTask()
     --
     if API.PInAreaW(GlacorsCheck, 35) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             GlacorsSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1240,7 +1240,7 @@ local function BlackDemonsTask()
     --
     if API.PInAreaW(BlackDemonsCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             BlackDemonsSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1281,7 +1281,7 @@ local function AbyssSavageTask()
     --
     if API.PInAreaW(AbyssSavageCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             AbyssSavageSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1347,7 +1347,7 @@ local function AbyssLordTask()
     --
     if API.PInAreaW(AbyssLordCheck, 50) then
         repeat
-            UTILS:antiIdle()
+            API.SetMaxIdleTime(5)
             AbyssLordSlayer()
         until (KillsLeft0() == 0) or not API.Read_LoopyLoop()
     elseif not findNPC(19918, 15) then
@@ -1520,7 +1520,7 @@ end
 
 API.SetDrawTrackedSkills(true)
 while API.Read_LoopyLoop() do
-    UTILS:antiIdle()
+    API.SetMaxIdleTime(5)
     eatfood()
 
     if (KillsLeft0() == 0) then
